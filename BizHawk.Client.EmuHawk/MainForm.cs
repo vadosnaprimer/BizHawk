@@ -84,7 +84,8 @@ namespace BizHawk.Client.EmuHawk
 		CoreComm CreateCoreComm()
 		{
 			CoreComm ret = new CoreComm(ShowMessageCoreComm, NotifyCoreComm);
-			ret.RequestGLContext = () => GlobalWin.GLManager.CreateGLContext();
+			ret.ReleaseGLContext = (o) => GlobalWin.GLManager.ReleaseGLContext(o);
+			ret.RequestGLContext = (major,minor,forward) => GlobalWin.GLManager.CreateGLContext(major,minor,forward);
 			ret.ActivateGLContext = (gl) => GlobalWin.GLManager.Activate((GLManager.ContextRef)gl);
 			ret.DeactivateGLContext = () => GlobalWin.GLManager.Deactivate();
 			return ret;
@@ -857,7 +858,7 @@ namespace BizHawk.Client.EmuHawk
 
 		public void RebootCore()
 		{
-			var ioa = OpenAdvancedSerializer.ParseWithLegacy(CurrentlyOpenRom);
+			var ioa = OpenAdvancedSerializer.ParseWithLegacy(CurrentlyOpenRomPoopForAdvancedLoaderPleaseRefactorME);
 			if (ioa is OpenAdvanced_LibretroNoGame)
 				LoadRom("", CurrentlyOpenRomArgs);
 			else
@@ -909,6 +910,17 @@ namespace BizHawk.Client.EmuHawk
 			}
 
 			GlobalWin.OSD.AddMessage("Screenshot (raw) saved to clipboard.");
+		}
+
+		public void TakeScreenshotClientToClipboard()
+		{
+			using (var bb = GlobalWin.DisplayManager.RenderOffscreen(Global.Emulator.VideoProvider(), Global.Config.Screenshot_CaptureOSD))
+			{
+				using (var img = bb.ToSysdrawingBitmap())
+					Clipboard.SetImage(img);
+			}
+
+			GlobalWin.OSD.AddMessage("Screenshot (client) saved to clipboard.");
 		}
 
 		public void TakeScreenshot()
@@ -1882,11 +1894,9 @@ namespace BizHawk.Client.EmuHawk
 			}
 		}
 
-		private static unsafe BitmapBuffer MakeScreenshotImage()
+		private static BitmapBuffer MakeScreenshotImage()
 		{
-			var bb = new BitmapBuffer(Global.Emulator.VideoProvider().BufferWidth, Global.Emulator.VideoProvider().BufferHeight, Global.Emulator.VideoProvider().GetVideoBuffer());
-			bb.DiscardAlpha();
-			return bb;
+			return GlobalWin.DisplayManager.RenderVideoProvider(Global.Emulator.VideoProvider());
 		}
 
 		private void SaveSlotSelectedMessage()
@@ -3450,7 +3460,8 @@ namespace BizHawk.Client.EmuHawk
 					}
 
 					SetWindowText();
-					CurrentlyOpenRom = loaderName;
+					CurrentlyOpenRomPoopForAdvancedLoaderPleaseRefactorME = loaderName;
+					CurrentlyOpenRom = loaderName.Replace("*OpenRom*", ""); // POOP
 					HandlePlatformMenus();
 					_stateSlots.Clear();
 					UpdateCoreStatusBarButton();
@@ -3510,6 +3521,8 @@ namespace BizHawk.Client.EmuHawk
 				}
 			}
 		}
+
+		private string CurrentlyOpenRomPoopForAdvancedLoaderPleaseRefactorME = "";
 
 		private static void CommitCoreSettingsToConfig()
 		{
@@ -3680,6 +3693,11 @@ namespace BizHawk.Client.EmuHawk
 
 			if (SavestateManager.LoadStateFile(path, userFriendlyStateName))
 			{
+				if (GlobalWin.Tools.Has<LuaConsole>())
+				{
+					GlobalWin.Tools.LuaConsole.LuaImp.CallLoadStateEvent(userFriendlyStateName);
+				}
+
 				SetMainformMovieInfo();
 				GlobalWin.OSD.ClearGUIText();
 				GlobalWin.Tools.UpdateToolsBefore(fromLua);
@@ -3690,11 +3708,6 @@ namespace BizHawk.Client.EmuHawk
 				if (!supressOSD)
 				{
 					GlobalWin.OSD.AddMessage("Loaded state: " + userFriendlyStateName);
-				}
-
-				if (GlobalWin.Tools.Has<LuaConsole>())
-				{
-					GlobalWin.Tools.LuaConsole.LuaImp.CallLoadStateEvent(userFriendlyStateName);
 				}
 			}
 			else
@@ -3780,19 +3793,9 @@ namespace BizHawk.Client.EmuHawk
 				file.Directory.Create();
 			}
 
-
 			// Make backup first
-			if (Global.Config.BackupSavestates && file.Exists)
-			{
-				var backup = path + ".bak";
-				var backupFile = new FileInfo(backup);
-				if (backupFile.Exists)
-				{
-					backupFile.Delete();
-				}
-
-				File.Move(path, backup);
-			}
+			if (Global.Config.BackupSavestates)
+				BizHawk.Common.Util.TryMoveBackupFile(path, path + ".bak");
 
 			SaveState(path, quickSlotName, false);
 
