@@ -56,7 +56,6 @@ namespace BizHawk.Client.EmuHawk
 				{
 					Dock = DockStyle.Top
 				});
-
 			}
 
 			linkLabel2.Text = "Commit # " + SubWCRev.GIT_SHORTHASH;
@@ -70,6 +69,11 @@ namespace BizHawk.Client.EmuHawk
 		private void btnCopyHash_Click(object sender, EventArgs e)
 		{
 			System.Windows.Forms.Clipboard.SetText(SubWCRev.GIT_SHORTHASH);
+		}
+
+		private void linkLabel3_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+		{
+			System.Diagnostics.Process.Start("https://github.com/TASVideos/BizHawk/graphs/contributors");
 		}
 	}
 }
