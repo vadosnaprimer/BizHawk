@@ -554,2152 +554,6 @@ namespace BizHawk.Emulation.Cores.Components.M6502
 		int lo, hi;
 		public Action<TraceInfo> TraceCallback;
 
-		void Fetch1()
-		{
-			my_iflag = FlagI;
-			FlagI = iflag_pending;
-			if (!branch_irq_hack)
-			{
-				interrupt_pending = false;
-				if (NMI)
-				{
-					if (TraceCallback != null)
-					{
-						TraceCallback(new TraceInfo
-						{
-							Disassembly = "====NMI====",
-							RegisterInfo = ""
-						});
-					}
-
-					ea = NMIVector;
-					opcode = VOP_NMI;
-					NMI = false;
-					mi = 0;
-					ExecuteOneRetry();
-					return;
-				}
-				else if (IRQ && !my_iflag)
-				{
-					if (TraceCallback != null)
-					{
-						TraceCallback(new TraceInfo
-						{
-							Disassembly = "====IRQ====",
-							RegisterInfo = ""
-						});
-					}
-					ea = IRQVector;
-					opcode = VOP_IRQ;
-					mi = 0;
-					ExecuteOneRetry();
-					return;
-				}
-			}
-			Fetch1_Real();
-		}
-
-		void Fetch1_Real()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				if (debug) Console.WriteLine(State());
-				branch_irq_hack = false;
-				if (OnExecFetch != null) OnExecFetch(PC);
-				if (TraceCallback != null)
-					TraceCallback(State());
-				opcode = ReadMemory(PC++);
-				mi = -1;
-			}
-		}
-		void Fetch2()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				opcode2 = ReadMemory(PC++);
-			}
-		}
-		void Fetch3()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				opcode3 = ReadMemory(PC++);
-			}
-		}
-		void PushPCH()
-		{
-			WriteMemory((ushort)(S-- + 0x100), (byte)(PC >> 8));
-		}
-		void PushPCL()
-		{
-			WriteMemory((ushort)(S-- + 0x100), (byte)PC);
-		}
-		void PushP_BRK()
-		{
-			FlagB = true;
-			WriteMemory((ushort)(S-- + 0x100), P);
-			FlagI = true;
-			ea = BRKVector;
-
-		}
-		void PushP_IRQ()
-		{
-			FlagB = false;
-			WriteMemory((ushort)(S-- + 0x100), P);
-			FlagI = true;
-			ea = IRQVector;
-
-		}
-		void PushP_NMI()
-		{
-			FlagB = false;
-			WriteMemory((ushort)(S-- + 0x100), P);
-			FlagI = true; //is this right?
-			ea = NMIVector;
-
-		}
-		void PushP_Reset()
-		{
-			ea = ResetVector;
-			S--;
-			FlagI = true;
-
-		}
-		void PushDummy()
-		{
-			S--;
-
-		}
-		void FetchPCLVector()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				if (ea == BRKVector && FlagB && NMI)
-				{
-					NMI = false;
-					ea = NMIVector;
-				}
-				if (ea == IRQVector && !FlagB && NMI)
-				{
-					NMI = false;
-					ea = NMIVector;
-				}
-				alu_temp = ReadMemory((ushort)ea);
-			}
-
-		}
-		void FetchPCHVector()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp += ReadMemory((ushort)(ea + 1)) << 8;
-				PC = (ushort)alu_temp;
-			}
-
-		}
-		void Imp_INY()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); Y++; NZ_Y();
-			}
-		}
-		void Imp_DEY()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); Y--; NZ_Y();
-			}
-		}
-		void Imp_INX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); X++; NZ_X();
-			}
-		}
-		void Imp_DEX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); X--; NZ_X();
-			}
-		}
-		void NZ_A()
-		{
-			P = (byte)((P & 0x7D) | TableNZ[A]);
-		}
-		void NZ_X()
-		{
-			P = (byte)((P & 0x7D) | TableNZ[X]);
-		}
-		void NZ_Y()
-		{
-			P = (byte)((P & 0x7D) | TableNZ[Y]);
-
-		}
-		void Imp_TSX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); X = S; NZ_X();
-			}
-		}
-		void Imp_TXS()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); S = X;
-			}
-		}
-		void Imp_TAX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); X = A; NZ_X();
-			}
-		}
-		void Imp_TAY()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); Y = A; NZ_Y();
-			}
-		}
-		void Imp_TYA()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); A = Y; NZ_A();
-			}
-		}
-		void Imp_TXA()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); A = X; NZ_A();
-			}
-
-		}
-		void Imp_SEI()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); iflag_pending = true;
-			}
-		}
-		void Imp_CLI()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); iflag_pending = false;
-			}
-		}
-		void Imp_SEC()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); FlagC = true;
-			}
-		}
-		void Imp_CLC()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); FlagC = false;
-			}
-		}
-		void Imp_SED()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); FlagD = true;
-			}
-		}
-		void Imp_CLD()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); FlagD = false;
-			}
-		}
-		void Imp_CLV()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				FetchDummy(); FlagV = false;
-			}
-
-		}
-		void Abs_WRITE_STA()
-		{
-			WriteMemory((ushort)((opcode3 << 8) + opcode2), A);
-		}
-		void Abs_WRITE_STX()
-		{
-			WriteMemory((ushort)((opcode3 << 8) + opcode2), X);
-		}
-		void Abs_WRITE_STY()
-		{
-			WriteMemory((ushort)((opcode3 << 8) + opcode2), Y);
-		}
-		void Abs_WRITE_SAX()
-		{
-			WriteMemory((ushort)((opcode3 << 8) + opcode2), (byte)(X & A));
-
-		}
-		void ZP_WRITE_STA()
-		{
-			WriteMemory(opcode2, A);
-		}
-		void ZP_WRITE_STY()
-		{
-			WriteMemory(opcode2, Y);
-		}
-		void ZP_WRITE_STX()
-		{
-			WriteMemory(opcode2, X);
-		}
-		void ZP_WRITE_SAX()
-		{
-			WriteMemory(opcode2, (byte)(X & A));
-
-		}
-		void IndIdx_Stage3()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				ea = ReadMemory(opcode2);
-			}
-
-		}
-		void IndIdx_Stage4()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ea + Y;
-				ea = (ReadMemory((byte)(opcode2 + 1)) << 8)
-					| ((alu_temp & 0xFF));
-			}
-
-		}
-		void IndIdx_WRITE_Stage5()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				ReadMemory((ushort)ea);
-				ea += (alu_temp >> 8) << 8;
-			}
-
-		}
-		void IndIdx_READ_Stage5()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				if (!alu_temp.Bit(8))
-				{
-					mi++;
-					ExecuteOneRetry();
-					return;
-				}
-				else
-				{
-					ReadMemory((ushort)ea);
-					ea = (ushort)(ea + 0x100);
-				}
-			}
-		}
-		void IndIdx_RMW_Stage5()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				if (alu_temp.Bit(8))
-					ea = (ushort)(ea + 0x100);
-				ReadMemory((ushort)ea);
-			}
-
-		}
-		void IndIdx_WRITE_Stage6_STA()
-		{
-			WriteMemory((ushort)ea, A);
-
-		}
-		void IndIdx_WRITE_Stage6_SHA()
-		{
-			WriteMemory((ushort)ea, (byte)(A & X & 7));
-
-		}
-		void IndIdx_READ_Stage6_LDA()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				A = ReadMemory((ushort)ea);
-				NZ_A();
-			}
-		}
-		void IndIdx_READ_Stage6_CMP()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_Cmp();
-			}
-		}
-		void IndIdx_READ_Stage6_AND()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_And();
-			}
-		}
-		void IndIdx_READ_Stage6_EOR()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_Eor();
-			}
-		}
-		void IndIdx_READ_Stage6_LAX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				A = X = ReadMemory((ushort)ea);
-				NZ_A();
-			}
-		}
-		void IndIdx_READ_Stage6_ADC()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_Adc();
-			}
-		}
-		void IndIdx_READ_Stage6_SBC()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_Sbc();
-			}
-		}
-		void IndIdx_READ_Stage6_ORA()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_Ora();
-			}
-		}
-		void IndIdx_RMW_Stage6()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-			}
-
-		}
-		void IndIdx_RMW_Stage7_SLO()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 0x80) != 0;
-			alu_temp = value8 = (byte)((value8 << 1));
-			A |= value8;
-			NZ_A();
-		}
-		void IndIdx_RMW_Stage7_SRE()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 1) != 0;
-			alu_temp = value8 = (byte)(value8 >> 1);
-			A ^= value8;
-			NZ_A();
-		}
-		void IndIdx_RMW_Stage7_RRA()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
-			FlagC = (temp8 & 1) != 0;
-			_Adc();
-		}
-		void IndIdx_RMW_Stage7_ISC()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)(value8 + 1);
-			_Sbc();
-		}
-		void IndIdx_RMW_Stage7_DCP()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)(value8 - 1);
-			FlagC = (temp8 & 1) != 0;
-			_Cmp();
-		}
-		void IndIdx_RMW_Stage7_RLA()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
-			FlagC = (temp8 & 0x80) != 0;
-			A &= value8;
-			NZ_A();
-		}
-		void IndIdx_RMW_Stage8()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-
-
-		}
-		void RelBranch_Stage2_BVS()
-		{
-			branch_taken = FlagV == true;
-			RelBranch_Stage2();
-		}
-		void RelBranch_Stage2_BVC()
-		{
-			branch_taken = FlagV == false;
-			RelBranch_Stage2();
-		}
-		void RelBranch_Stage2_BMI()
-		{
-			branch_taken = FlagN == true;
-			RelBranch_Stage2();
-		}
-		void RelBranch_Stage2_BPL()
-		{
-			branch_taken = FlagN == false;
-			RelBranch_Stage2();
-		}
-		void RelBranch_Stage2_BCS()
-		{
-			branch_taken = FlagC == true;
-			RelBranch_Stage2();
-		}
-		void RelBranch_Stage2_BCC()
-		{
-			branch_taken = FlagC == false;
-			RelBranch_Stage2();
-		}
-		void RelBranch_Stage2_BEQ()
-		{
-			branch_taken = FlagZ == true;
-			RelBranch_Stage2();
-		}
-		void RelBranch_Stage2_BNE()
-		{
-			branch_taken = FlagZ == false;
-			RelBranch_Stage2();
-
-		}
-		void RelBranch_Stage2()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				opcode2 = ReadMemory(PC++);
-				if (branch_taken)
-				{
-					branch_taken = false;
-					//if the branch is taken, we enter a different bit of microcode to calculate the PC and complete the branch
-					opcode = VOP_RelativeStuff;
-					mi = -1;
-				}
-			}
-
-		}
-		void RelBranch_Stage3()
-		{
-            rdy_freeze = !RDY;
-		    if (RDY)
-		    {
-                FetchDummy();
-                alu_temp = (byte)PC + (int)(sbyte)opcode2;
-                PC &= 0xFF00;
-                PC |= (ushort)((alu_temp & 0xFF));
-                if (alu_temp.Bit(8))
-                {
-                    //we need to carry the add, and then we'll be ready to fetch the next instruction
-                    opcode = VOP_RelativeStuff2;
-                    mi = -1;
-                }
-                else
-                {
-                    //to pass cpu_interrupts_v2/5-branch_delays_irq we need to handle a quirk here
-                    //if we decide to interrupt in the next cycle, this condition will cause it to get deferred by one instruction
-                    if (!interrupt_pending)
-                        branch_irq_hack = true;
-                }
-            }
-        }
-		void RelBranch_Stage4()
-		{
-            rdy_freeze = !RDY;
-		    if (RDY)
-		    {
-                FetchDummy();
-                if (alu_temp.Bit(31))
-                    PC = (ushort)(PC - 0x100);
-                else PC = (ushort)(PC + 0x100);
-            }
-        }
-		void NOP()
-		{
-            rdy_freeze = !RDY;
-        }
-        void DecS()
-		{
-            rdy_freeze = !RDY;
-            if (RDY)
-            {
-                S--;
-            }
-        }
-		void IncS()
-		{
-            rdy_freeze = !RDY;
-            if (RDY)
-            {
-                S++;
-            }
-        }
-		void JSR()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				PC = (ushort)((ReadMemory((ushort)(PC)) << 8) + opcode2);
-			}
-		}
-		void PullP()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				P = ReadMemory((ushort)(S++ + 0x100));
-				FlagT = true; //force T always to remain true
-			}
-
-		}
-		void PullPCL()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				PC &= 0xFF00;
-				PC |= ReadMemory((ushort)(S++ + 0x100));
-			}
-
-		}
-		void PullPCH_NoInc()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				PC &= 0xFF;
-				PC |= (ushort)(ReadMemory((ushort)(S + 0x100)) << 8);
-			}
-
-		}
-		void Abs_READ_LDA()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				A = ReadMemory((ushort)((opcode3 << 8) + opcode2));
-				NZ_A();
-			}
-		}
-		void Abs_READ_LDY()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				Y = ReadMemory((ushort)((opcode3 << 8) + opcode2));
-				NZ_Y();
-			}
-		}
-		void Abs_READ_LDX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				X = ReadMemory((ushort)((opcode3 << 8) + opcode2));
-				NZ_X();
-			}
-		}
-		void Abs_READ_BIT()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
-				_Bit();
-			}
-		}
-		void Abs_READ_LAX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
-				A = ReadMemory((ushort)((opcode3 << 8) + opcode2));
-				X = A;
-				NZ_A();
-			}
-		}
-		void Abs_READ_AND()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
-				_And();
-			}
-		}
-		void Abs_READ_EOR()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
-				_Eor();
-			}
-		}
-		void Abs_READ_ORA()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
-				_Ora();
-			}
-		}
-		void Abs_READ_ADC()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
-				_Adc();
-			}
-		}
-		void Abs_READ_CMP()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
-				_Cmp();
-			}
-		}
-		void Abs_READ_CPY()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
-				_Cpy();
-			}
-		}
-		void Abs_READ_NOP()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
-			}
-
-		}
-		void Abs_READ_CPX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
-				_Cpx();
-			}
-		}
-		void Abs_READ_SBC()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
-				_Sbc();
-			}
-
-		}
-		void ZpIdx_Stage3_X()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				ReadMemory(opcode2);
-				opcode2 = (byte)(opcode2 + X); //a bit sneaky to shove this into opcode2... but we can reuse all the zero page uops if we do that
-			}
-
-		}
-		void ZpIdx_Stage3_Y()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				ReadMemory(opcode2);
-				opcode2 = (byte)(opcode2 + Y); //a bit sneaky to shove this into opcode2... but we can reuse all the zero page uops if we do that
-			}
-
-		}
-		void ZpIdx_RMW_Stage4()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(opcode2);
-			}
-
-		}
-		void ZpIdx_RMW_Stage6()
-		{
-			WriteMemory(opcode2, (byte)alu_temp);
-
-
-		}
-		void ZP_READ_EOR()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(opcode2);
-				_Eor();
-			}
-		}
-		void ZP_READ_BIT()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(opcode2);
-				_Bit();
-			}
-		}
-		void ZP_READ_LDA()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				A = ReadMemory(opcode2);
-				NZ_A();
-			}
-		}
-		void ZP_READ_LDY()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				Y = ReadMemory(opcode2);
-				NZ_Y();
-			}
-		}
-		void ZP_READ_LDX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				X = ReadMemory(opcode2);
-				NZ_X();
-			}
-		}
-		void ZP_READ_LAX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				//?? is this right??
-				X = ReadMemory(opcode2);
-				A = X;
-				NZ_A();
-			}
-		}
-		void ZP_READ_CPY()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(opcode2);
-				_Cpy();
-			}
-		}
-		void ZP_READ_CMP()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(opcode2);
-				_Cmp();
-			}
-		}
-		void ZP_READ_CPX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(opcode2);
-				_Cpx();
-			}
-		}
-		void ZP_READ_ORA()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(opcode2);
-				_Ora();
-			}
-		}
-		void ZP_READ_NOP()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				ReadMemory(opcode2); //just a dummy
-			}
-
-		}
-		void ZP_READ_SBC()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(opcode2);
-				_Sbc();
-			}
-		}
-		void ZP_READ_ADC()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(opcode2);
-				_Adc();
-			}
-		}
-		void ZP_READ_AND()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(opcode2);
-				_And();
-			}
-
-		}
-		void _Cpx()
-		{
-			value8 = (byte)alu_temp;
-			value16 = (ushort)(X - value8);
-			FlagC = (X >= value8);
-			P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
-
-		}
-		void _Cpy()
-		{
-			value8 = (byte)alu_temp;
-			value16 = (ushort)(Y - value8);
-			FlagC = (Y >= value8);
-			P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
-
-		}
-		void _Cmp()
-		{
-			value8 = (byte)alu_temp;
-			value16 = (ushort)(A - value8);
-			FlagC = (A >= value8);
-			P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
-
-		}
-		void _Bit()
-		{
-			FlagN = (alu_temp & 0x80) != 0;
-			FlagV = (alu_temp & 0x40) != 0;
-			FlagZ = (A & alu_temp) == 0;
-
-		}
-		void _Eor()
-		{
-			A ^= (byte)alu_temp;
-			NZ_A();
-		}
-		void _And()
-		{
-			A &= (byte)alu_temp;
-			NZ_A();
-		}
-		void _Ora()
-		{
-			A |= (byte)alu_temp;
-			NZ_A();
-		}
-		void _Anc()
-		{
-			A &= (byte)alu_temp;
-			FlagC = A.Bit(7);
-			NZ_A();
-		}
-		void _Asr()
-		{
-			A &= (byte)alu_temp;
-			FlagC = A.Bit(0);
-			A >>= 1;
-			NZ_A();
-		}
-		void _Axs()
-		{
-			X &= A;
-			alu_temp = X - (byte)alu_temp;
-			X = (byte)alu_temp;
-			FlagC = !alu_temp.Bit(8);
-			NZ_X();
-		}
-		void _Arr()
-		{
-			{
-				A &= (byte)alu_temp;
-				booltemp = A.Bit(0);
-				A = (byte)((A >> 1) | (FlagC ? 0x80 : 0x00));
-				FlagC = booltemp;
-				if (A.Bit(5))
-					if (A.Bit(6))
-					{ FlagC = true; FlagV = false; }
-					else { FlagV = true; FlagC = false; }
-				else if (A.Bit(6))
-				{ FlagV = true; FlagC = true; }
-				else { FlagV = false; FlagC = false; }
-				FlagZ = (A == 0);
-
-			}
-		}
-		void _Lxa()
-		{
-			A |= 0xFF; //there is some debate about what this should be. it may depend on the 6502 variant. this is suggested by qeed's doc for the nes and passes blargg's instruction test
-			A &= (byte)alu_temp;
-			X = A;
-			NZ_A();
-		}
-		void _Sbc()
-		{
-			{
-				value8 = (byte)alu_temp;
-				tempint = A - value8 - (FlagC ? 0 : 1);
-				if (FlagD && BCD_Enabled)
-				{
-					lo = (A & 0x0F) - (value8 & 0x0F) - (FlagC ? 0 : 1);
-					hi = (A & 0xF0) - (value8 & 0xF0);
-					if ((lo & 0xF0) != 0) lo -= 0x06;
-					if ((lo & 0x80) != 0) hi -= 0x10;
-					if ((hi & 0x0F00) != 0) hi -= 0x60;
-					FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
-					FlagC = (hi & 0xFF00) == 0;
-					A = (byte)((lo & 0x0F) | (hi & 0xF0));
-				}
-				else
-				{
-					FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
-					FlagC = tempint >= 0;
-					A = (byte)tempint;
-				}
-				NZ_A();
-			}
-		}
-		void _Adc()
-		{
-			{
-				//TODO - an extra cycle penalty?
-				value8 = (byte)alu_temp;
-				if (FlagD && BCD_Enabled)
-				{
-					lo = (A & 0x0F) + (value8 & 0x0F) + (FlagC ? 1 : 0);
-					hi = (A & 0xF0) + (value8 & 0xF0);
-					if (lo > 0x09)
-					{
-						hi += 0x10;
-						lo += 0x06;
-					}
-					if (hi > 0x90) hi += 0x60;
-					FlagV = (~(A ^ value8) & (A ^ hi) & 0x80) != 0;
-					FlagC = hi > 0xFF;
-					A = (byte)((lo & 0x0F) | (hi & 0xF0));
-				}
-				else
-				{
-					tempint = value8 + A + (FlagC ? 1 : 0);
-					FlagV = (~(A ^ value8) & (A ^ tempint) & 0x80) != 0;
-					FlagC = tempint > 0xFF;
-					A = (byte)tempint;
-				}
-				NZ_A();
-			}
-
-		}
-		void Unsupported()
-		{
-
-
-		}
-		void Imm_EOR()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(PC++);
-				_Eor();
-			}
-		}
-		void Imm_ANC()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(PC++);
-				_Anc();
-			}
-		}
-		void Imm_ASR()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(PC++);
-				_Asr();
-			}
-		}
-		void Imm_AXS()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(PC++);
-				_Axs();
-			}
-		}
-		void Imm_ARR()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(PC++);
-				_Arr();
-			}
-		}
-		void Imm_LXA()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(PC++);
-				_Lxa();
-			}
-		}
-		void Imm_ORA()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(PC++);
-				_Ora();
-			}
-		}
-		void Imm_CPY()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(PC++);
-				_Cpy();
-			}
-		}
-		void Imm_CPX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(PC++);
-				_Cpx();
-			}
-		}
-		void Imm_CMP()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(PC++);
-				_Cmp();
-			}
-		}
-		void Imm_SBC()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(PC++);
-				_Sbc();
-			}
-		}
-		void Imm_AND()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(PC++);
-				_And();
-			}
-		}
-		void Imm_ADC()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(PC++);
-				_Adc();
-			}
-		}
-		void Imm_LDA()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				A = ReadMemory(PC++);
-				NZ_A();
-			}
-		}
-		void Imm_LDX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				X = ReadMemory(PC++);
-				NZ_X();
-			}
-		}
-		void Imm_LDY()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				Y = ReadMemory(PC++);
-				NZ_Y();
-			}
-		}
-		void Imm_Unsupported()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				ReadMemory(PC++);
-			}
-
-		}
-		void IdxInd_Stage3()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				ReadMemory(opcode2); //dummy?
-				alu_temp = (opcode2 + X) & 0xFF;
-			}
-
-		}
-		void IdxInd_Stage4()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				ea = ReadMemory((ushort)alu_temp);
-			}
-
-		}
-		void IdxInd_Stage5()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				ea += (ReadMemory((byte)(alu_temp + 1)) << 8);
-			}
-
-		}
-		void IdxInd_Stage6_READ_LDA()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				//TODO make uniform with others
-				A = ReadMemory((ushort)ea);
-				NZ_A();
-			}
-		}
-		void IdxInd_Stage6_READ_ORA()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_Ora();
-			}
-		}
-		void IdxInd_Stage6_READ_LAX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				A = X = ReadMemory((ushort)ea);
-				NZ_A();
-			}
-		}
-		void IdxInd_Stage6_READ_CMP()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_Cmp();
-			}
-		}
-		void IdxInd_Stage6_READ_ADC()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_Adc();
-			}
-		}
-		void IdxInd_Stage6_READ_AND()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_And();
-			}
-		}
-		void IdxInd_Stage6_READ_EOR()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_Eor();
-			}
-		}
-		void IdxInd_Stage6_READ_SBC()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_Sbc();
-			}
-		}
-		void IdxInd_Stage6_WRITE_STA()
-		{
-			WriteMemory((ushort)ea, A);
-
-		}
-		void IdxInd_Stage6_WRITE_SAX()
-		{
-			alu_temp = A & X;
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			//flag writing skipped on purpose
-
-		}
-		void IdxInd_Stage6_RMW()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-			}
-
-		}
-		void IdxInd_Stage7_RMW_SLO()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 0x80) != 0;
-			alu_temp = value8 = (byte)((value8 << 1));
-			A |= value8;
-			NZ_A();
-		}
-		void IdxInd_Stage7_RMW_ISC()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)(value8 + 1);
-			_Sbc();
-		}
-		void IdxInd_Stage7_RMW_DCP()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)(value8 - 1);
-			FlagC = (temp8 & 1) != 0;
-			_Cmp();
-		}
-		void IdxInd_Stage7_RMW_SRE()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 1) != 0;
-			alu_temp = value8 = (byte)(value8 >> 1);
-			A ^= value8;
-			NZ_A();
-		}
-		void IdxInd_Stage7_RMW_RRA()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
-			FlagC = (temp8 & 1) != 0;
-			_Adc();
-		}
-		void IdxInd_Stage7_RMW_RLA()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
-			FlagC = (temp8 & 0x80) != 0;
-			A &= value8;
-			NZ_A();
-		}
-		void IdxInd_Stage8_RMW()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-
-
-		}
-		void PushP()
-		{
-			FlagB = true;
-			WriteMemory((ushort)(S-- + 0x100), P);
-
-		}
-		void PushA()
-		{
-			WriteMemory((ushort)(S-- + 0x100), A);
-		}
-		void PullA_NoInc()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				A = ReadMemory((ushort)(S + 0x100));
-				NZ_A();
-			}
-		}
-		void PullP_NoInc()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				my_iflag = FlagI;
-				P = ReadMemory((ushort)(S + 0x100));
-				iflag_pending = FlagI;
-				FlagI = my_iflag;
-				FlagT = true; //force T always to remain true
-
-			}
-
-		}
-		void Imp_ASL_A()
-		{
-            rdy_freeze = !RDY;
-		    if (RDY)
-		    {
-                FetchDummy();
-                FlagC = (A & 0x80) != 0;
-                A = (byte)(A << 1);
-                NZ_A();
-            }
-        }
-		void Imp_ROL_A()
-		{
-            rdy_freeze = !RDY;
-		    if (RDY)
-		    {
-                FetchDummy();
-                temp8 = A;
-                A = (byte)((A << 1) | (P & 1));
-                FlagC = (temp8 & 0x80) != 0;
-                NZ_A();
-            }
-        }
-		void Imp_ROR_A()
-		{
-            rdy_freeze = !RDY;
-		    if (RDY)
-		    {
-                FetchDummy();
-                temp8 = A;
-                A = (byte)((A >> 1) | ((P & 1) << 7));
-                FlagC = (temp8 & 1) != 0;
-                NZ_A();
-            }
-        }
-		void Imp_LSR_A()
-		{
-            rdy_freeze = !RDY;
-            if (RDY)
-		    {
-                FetchDummy();
-                FlagC = (A & 1) != 0;
-                A = (byte)(A >> 1);
-                NZ_A();
-            }
-        }
-		void JMP_abs()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				PC = (ushort)((ReadMemory(PC) << 8) + opcode2);
-			}
-
-		}
-		void IncPC()
-		{
-			PC++;
-		}
-		void ZP_RMW_Stage3()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory(opcode2);
-			}
-
-		}
-		void ZP_RMW_Stage5()
-		{
-			WriteMemory(opcode2, (byte)alu_temp);
-		}
-		void ZP_RMW_INC()
-		{
-			WriteMemory(opcode2, (byte)alu_temp);
-			alu_temp = (byte)((alu_temp + 1) & 0xFF);
-			P = (byte)((P & 0x7D) | TableNZ[alu_temp]);
-		}
-		void ZP_RMW_DEC()
-		{
-			WriteMemory(opcode2, (byte)alu_temp);
-			alu_temp = (byte)((alu_temp - 1) & 0xFF);
-			P = (byte)((P & 0x7D) | TableNZ[alu_temp]);
-		}
-		void ZP_RMW_ASL()
-		{
-			WriteMemory(opcode2, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 0x80) != 0;
-			alu_temp = value8 = (byte)(value8 << 1);
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-		}
-		void ZP_RMW_SRE()
-		{
-			WriteMemory(opcode2, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 1) != 0;
-			alu_temp = value8 = (byte)(value8 >> 1);
-			A ^= value8;
-			NZ_A();
-		}
-		void ZP_RMW_RRA()
-		{
-			WriteMemory(opcode2, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
-			FlagC = (temp8 & 1) != 0;
-			_Adc();
-		}
-		void ZP_RMW_DCP()
-		{
-			WriteMemory(opcode2, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)(value8 - 1);
-			FlagC = (temp8 & 1) != 0;
-			_Cmp();
-		}
-		void ZP_RMW_LSR()
-		{
-			WriteMemory(opcode2, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 1) != 0;
-			alu_temp = value8 = (byte)(value8 >> 1);
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-
-		}
-		void ZP_RMW_ROR()
-		{
-			WriteMemory(opcode2, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
-			FlagC = (temp8 & 1) != 0;
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-		}
-		void ZP_RMW_ROL()
-		{
-			WriteMemory(opcode2, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
-			FlagC = (temp8 & 0x80) != 0;
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-		}
-		void ZP_RMW_SLO()
-		{
-			WriteMemory(opcode2, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 0x80) != 0;
-			alu_temp = value8 = (byte)((value8 << 1));
-			A |= value8;
-			NZ_A();
-		}
-		void ZP_RMW_ISC()
-		{
-			WriteMemory(opcode2, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)(value8 + 1);
-			_Sbc();
-		}
-		void ZP_RMW_RLA()
-		{
-			WriteMemory(opcode2, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
-			FlagC = (temp8 & 0x80) != 0;
-			A &= value8;
-			NZ_A();
-		}
-		void AbsIdx_Stage3_Y()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				opcode3 = ReadMemory(PC++);
-				alu_temp = opcode2 + Y;
-				ea = (opcode3 << 8) + (alu_temp & 0xFF);
-
-				//new Uop[] { Uop.Fetch2, Uop.AbsIdx_Stage3_Y, Uop.AbsIdx_Stage4, Uop.AbsIdx_WRITE_Stage5_STA, Uop.End },
-			}
-		}
-		void AbsIdx_Stage3_X()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				opcode3 = ReadMemory(PC++);
-				alu_temp = opcode2 + X;
-				ea = (opcode3 << 8) + (alu_temp & 0xFF);
-			}
-
-		}
-		void AbsIdx_READ_Stage4()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				if (!alu_temp.Bit(8))
-				{
-					mi++;
-					ExecuteOneRetry();
-					return;
-				}
-				else
-				{
-					alu_temp = ReadMemory((ushort)ea);
-					ea = (ushort)(ea + 0x100);
-				}
-			}
-
-		}
-		void AbsIdx_Stage4()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				//bleh.. redundant code to make sure we dont clobber alu_temp before using it to decide whether to change ea
-				if (alu_temp.Bit(8))
-				{
-					alu_temp = ReadMemory((ushort)ea);
-					ea = (ushort)(ea + 0x100);
-				}
-				else alu_temp = ReadMemory((ushort)ea);
-			}
-
-		}
-		void AbsIdx_WRITE_Stage5_STA()
-		{
-			WriteMemory((ushort)ea, A);
-
-		}
-		void AbsIdx_WRITE_Stage5_SHY()
-		{
-			alu_temp = Y & (ea >> 8);
-			ea = (ea & 0xFF) | (alu_temp << 8); //"(the bank where the value is stored may be equal to the value stored)" -- more like IS.
-			WriteMemory((ushort)ea, (byte)alu_temp);
-
-		}
-		void AbsIdx_WRITE_Stage5_SHX()
-		{
-			alu_temp = X & (ea >> 8);
-			ea = (ea & 0xFF) | (alu_temp << 8); //"(the bank where the value is stored may be equal to the value stored)" -- more like IS.
-			WriteMemory((ushort)ea, (byte)alu_temp);
-
-		}
-		void AbsIdx_WRITE_Stage5_ERROR()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				//throw new InvalidOperationException("UNSUPPORTED OPCODE [probably SHS] PLEASE REPORT");
-			}
-
-		}
-		void AbsIdx_RMW_Stage5()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-			}
-
-		}
-		void AbsIdx_RMW_Stage7()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-
-		}
-		void AbsIdx_RMW_Stage6_DEC()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			alu_temp = value8 = (byte)(alu_temp - 1);
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-
-		}
-		void AbsIdx_RMW_Stage6_DCP()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			alu_temp = value8 = (byte)(alu_temp - 1);
-			_Cmp();
-		}
-		void AbsIdx_RMW_Stage6_ISC()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			alu_temp = value8 = (byte)(alu_temp + 1);
-			_Sbc();
-		}
-		void AbsIdx_RMW_Stage6_INC()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			alu_temp = value8 = (byte)(alu_temp + 1);
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-
-		}
-		void AbsIdx_RMW_Stage6_ROL()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
-			FlagC = (temp8 & 0x80) != 0;
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-
-		}
-		void AbsIdx_RMW_Stage6_LSR()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 1) != 0;
-			alu_temp = value8 = (byte)(value8 >> 1);
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-
-		}
-		void AbsIdx_RMW_Stage6_SLO()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 0x80) != 0;
-			alu_temp = value8 = (byte)(value8 << 1);
-			A |= value8;
-			NZ_A();
-		}
-		void AbsIdx_RMW_Stage6_SRE()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 1) != 0;
-			alu_temp = value8 = (byte)(value8 >> 1);
-			A ^= value8;
-			NZ_A();
-		}
-		void AbsIdx_RMW_Stage6_RRA()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
-			FlagC = (temp8 & 1) != 0;
-			_Adc();
-		}
-		void AbsIdx_RMW_Stage6_RLA()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
-			FlagC = (temp8 & 0x80) != 0;
-			A &= value8;
-			NZ_A();
-		}
-		void AbsIdx_RMW_Stage6_ASL()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 0x80) != 0;
-			alu_temp = value8 = (byte)(value8 << 1);
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-
-		}
-		void AbsIdx_RMW_Stage6_ROR()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
-			FlagC = (temp8 & 1) != 0;
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-
-
-		}
-		void AbsIdx_READ_Stage5_LDA()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				A = ReadMemory((ushort)ea);
-				NZ_A();
-			}
-		}
-		void AbsIdx_READ_Stage5_LDX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				X = ReadMemory((ushort)ea);
-				NZ_X();
-			}
-		}
-		void AbsIdx_READ_Stage5_LAX()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				A = ReadMemory((ushort)ea);
-				X = A;
-				NZ_A();
-			}
-		}
-		void AbsIdx_READ_Stage5_LDY()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				Y = ReadMemory((ushort)ea);
-				NZ_Y();
-			}
-		}
-		void AbsIdx_READ_Stage5_ORA()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_Ora();
-			}
-		}
-		void AbsIdx_READ_Stage5_NOP()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-			}
-
-		}
-		void AbsIdx_READ_Stage5_CMP()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_Cmp();
-			}
-		}
-		void AbsIdx_READ_Stage5_SBC()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_Sbc();
-			}
-		}
-		void AbsIdx_READ_Stage5_ADC()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_Adc();
-			}
-		}
-		void AbsIdx_READ_Stage5_EOR()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_Eor();
-			}
-		}
-		void AbsIdx_READ_Stage5_AND()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				_And();
-			}
-		}
-		void AbsIdx_READ_Stage5_ERROR()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				alu_temp = ReadMemory((ushort)ea);
-				//throw new InvalidOperationException("UNSUPPORTED OPCODE [probably LAS] PLEASE REPORT");
-			}
-
-		}
-		void AbsInd_JMP_Stage4()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				ea = (opcode3 << 8) + opcode2;
-				alu_temp = ReadMemory((ushort)ea);
-			}
-		}
-		void AbsInd_JMP_Stage5()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				ea = (opcode3 << 8) + (byte)(opcode2 + 1);
-				alu_temp += ReadMemory((ushort)ea) << 8;
-				PC = (ushort)alu_temp;
-			}
-
-		}
-		void Abs_RMW_Stage4()
-		{
-			rdy_freeze = !RDY;
-			if (RDY)
-			{
-				ea = (opcode3 << 8) + opcode2;
-				alu_temp = ReadMemory((ushort)ea);
-			}
-
-		}
-		void Abs_RMW_Stage5_INC()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)(alu_temp + 1);
-			alu_temp = value8;
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-
-		}
-		void Abs_RMW_Stage5_DEC()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)(alu_temp - 1);
-			alu_temp = value8;
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-
-		}
-		void Abs_RMW_Stage5_DCP()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)(alu_temp - 1);
-			alu_temp = value8;
-			_Cmp();
-		}
-		void Abs_RMW_Stage5_ISC()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)(alu_temp + 1);
-			alu_temp = value8;
-			_Sbc();
-		}
-		void Abs_RMW_Stage5_ASL()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 0x80) != 0;
-			alu_temp = value8 = (byte)(value8 << 1);
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-
-		}
-		void Abs_RMW_Stage5_ROR()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
-			FlagC = (temp8 & 1) != 0;
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-
-		}
-		void Abs_RMW_Stage5_SLO()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 0x80) != 0;
-			alu_temp = value8 = (byte)(value8 << 1);
-			A |= value8;
-			NZ_A();
-		}
-		void Abs_RMW_Stage5_RLA()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
-			FlagC = (temp8 & 0x80) != 0;
-			A &= value8;
-			NZ_A();
-		}
-		void Abs_RMW_Stage5_SRE()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 1) != 0;
-			alu_temp = value8 = (byte)(value8 >> 1);
-			A ^= value8;
-			NZ_A();
-		}
-		void Abs_RMW_Stage5_RRA()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
-			FlagC = (temp8 & 1) != 0;
-			_Adc();
-		}
-		void Abs_RMW_Stage5_ROL()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = temp8 = (byte)alu_temp;
-			alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
-			FlagC = (temp8 & 0x80) != 0;
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-
-		}
-		void Abs_RMW_Stage5_LSR()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-			value8 = (byte)alu_temp;
-			FlagC = (value8 & 1) != 0;
-			alu_temp = value8 = (byte)(value8 >> 1);
-			P = (byte)((P & 0x7D) | TableNZ[value8]);
-
-
-		}
-		void Abs_RMW_Stage6()
-		{
-			WriteMemory((ushort)ea, (byte)alu_temp);
-
-
-		}
-		void End_ISpecial()
-		{
-			opcode = VOP_Fetch1;
-			mi = 0;
-			ExecuteOneRetry();
-			return;
-
-		}
-		void End_SuppressInterrupt()
-		{
-			opcode = VOP_Fetch1_NoInterrupt;
-			mi = 0;
-			ExecuteOneRetry();
-			return;
-
-		}
-		void End()
-		{
-			opcode = VOP_Fetch1;
-			mi = 0;
-			iflag_pending = FlagI;
-			ExecuteOneRetry();
-			return;
-		}
-		void End_BranchSpecial()
-		{
-			End();
-		}
-
-		void Jam()
-		{
-			rdy_freeze = true;
-		}
-
 		void ExecuteOneRetry()
 		{
 			//dont know whether this system is any faster. hard to get benchmarks someone else try it?
@@ -2708,252 +562,2478 @@ namespace BizHawk.Emulation.Cores.Components.M6502
 			switch (uop)
 			{
 				default: throw new InvalidOperationException();
-				case Uop.Fetch1: Fetch1(); break;
-				case Uop.Fetch1_Real: Fetch1_Real(); break;
-				case Uop.Fetch2: Fetch2(); break;
-				case Uop.Fetch3: Fetch3(); break;
+				case Uop.Fetch1:
+					my_iflag = FlagI;
+					FlagI = iflag_pending;
+					if (!branch_irq_hack)
+					{
+						interrupt_pending = false;
+						if (NMI)
+						{
+							if (TraceCallback != null)
+							{
+								TraceCallback(new TraceInfo
+								{
+									Disassembly = "====NMI====",
+									RegisterInfo = ""
+								});
+							}
+
+							ea = NMIVector;
+							opcode = VOP_NMI;
+							NMI = false;
+							mi = 0;
+							ExecuteOneRetry();
+							return;
+						}
+						else if (IRQ && !my_iflag)
+						{
+							if (TraceCallback != null)
+							{
+								TraceCallback(new TraceInfo
+								{
+									Disassembly = "====IRQ====",
+									RegisterInfo = ""
+								});
+							}
+							ea = IRQVector;
+							opcode = VOP_IRQ;
+							mi = 0;
+							ExecuteOneRetry();
+							return;
+						}
+					}
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						if (debug) Console.WriteLine(State());
+						branch_irq_hack = false;
+						if (OnExecFetch != null) OnExecFetch(PC);
+						if (TraceCallback != null)
+							TraceCallback(State());
+						opcode = ReadMemory(PC++);
+						mi = -1;
+					}
+					break;
+				case Uop.Fetch1_Real:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						if (debug) Console.WriteLine(State());
+						branch_irq_hack = false;
+						if (OnExecFetch != null) OnExecFetch(PC);
+						if (TraceCallback != null)
+							TraceCallback(State());
+						opcode = ReadMemory(PC++);
+						mi = -1;
+					}
+					break;
+				case Uop.Fetch2:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						opcode2 = ReadMemory(PC++);
+					}			
+					break;
+				case Uop.Fetch3:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						opcode3 = ReadMemory(PC++);
+					}
+					break;
 				case Uop.FetchDummy: FetchDummy(); break;
-				case Uop.PushPCH: PushPCH(); break;
-				case Uop.PushPCL: PushPCL(); break;
-				case Uop.PushP_BRK: PushP_BRK(); break;
-				case Uop.PushP_IRQ: PushP_IRQ(); break;
-				case Uop.PushP_NMI: PushP_NMI(); break;
-				case Uop.PushP_Reset: PushP_Reset(); break;
-				case Uop.PushDummy: PushDummy(); break;
-				case Uop.FetchPCLVector: FetchPCLVector(); break;
-				case Uop.FetchPCHVector: FetchPCHVector(); break;
-				case Uop.Imp_INY: Imp_INY(); break;
-				case Uop.Imp_DEY: Imp_DEY(); break;
-				case Uop.Imp_INX: Imp_INX(); break;
-				case Uop.Imp_DEX: Imp_DEX(); break;
-				case Uop.NZ_A: NZ_A(); break;
-				case Uop.NZ_X: NZ_X(); break;
-				case Uop.NZ_Y: NZ_Y(); break;
-				case Uop.Imp_TSX: Imp_TSX(); break;
-				case Uop.Imp_TXS: Imp_TXS(); break;
-				case Uop.Imp_TAX: Imp_TAX(); break;
-				case Uop.Imp_TAY: Imp_TAY(); break;
-				case Uop.Imp_TYA: Imp_TYA(); break;
-				case Uop.Imp_TXA: Imp_TXA(); break;
-				case Uop.Imp_SEI: Imp_SEI(); break;
-				case Uop.Imp_CLI: Imp_CLI(); break;
-				case Uop.Imp_SEC: Imp_SEC(); break;
-				case Uop.Imp_CLC: Imp_CLC(); break;
-				case Uop.Imp_SED: Imp_SED(); break;
-				case Uop.Imp_CLD: Imp_CLD(); break;
-				case Uop.Imp_CLV: Imp_CLV(); break;
-				case Uop.Abs_WRITE_STA: Abs_WRITE_STA(); break;
-				case Uop.Abs_WRITE_STX: Abs_WRITE_STX(); break;
-				case Uop.Abs_WRITE_STY: Abs_WRITE_STY(); break;
-				case Uop.Abs_WRITE_SAX: Abs_WRITE_SAX(); break;
-				case Uop.ZP_WRITE_STA: ZP_WRITE_STA(); break;
-				case Uop.ZP_WRITE_STY: ZP_WRITE_STY(); break;
-				case Uop.ZP_WRITE_STX: ZP_WRITE_STX(); break;
-				case Uop.ZP_WRITE_SAX: ZP_WRITE_SAX(); break;
-				case Uop.IndIdx_Stage3: IndIdx_Stage3(); break;
-				case Uop.IndIdx_Stage4: IndIdx_Stage4(); break;
-				case Uop.IndIdx_WRITE_Stage5: IndIdx_WRITE_Stage5(); break;
-				case Uop.IndIdx_READ_Stage5: IndIdx_READ_Stage5(); break;
-				case Uop.IndIdx_RMW_Stage5: IndIdx_RMW_Stage5(); break;
-				case Uop.IndIdx_WRITE_Stage6_STA: IndIdx_WRITE_Stage6_STA(); break;
-				case Uop.IndIdx_WRITE_Stage6_SHA: IndIdx_WRITE_Stage6_SHA(); break;
-				case Uop.IndIdx_READ_Stage6_LDA: IndIdx_READ_Stage6_LDA(); break;
-				case Uop.IndIdx_READ_Stage6_CMP: IndIdx_READ_Stage6_CMP(); break;
-				case Uop.IndIdx_READ_Stage6_AND: IndIdx_READ_Stage6_AND(); break;
-				case Uop.IndIdx_READ_Stage6_EOR: IndIdx_READ_Stage6_EOR(); break;
-				case Uop.IndIdx_READ_Stage6_LAX: IndIdx_READ_Stage6_LAX(); break;
-				case Uop.IndIdx_READ_Stage6_ADC: IndIdx_READ_Stage6_ADC(); break;
-				case Uop.IndIdx_READ_Stage6_SBC: IndIdx_READ_Stage6_SBC(); break;
-				case Uop.IndIdx_READ_Stage6_ORA: IndIdx_READ_Stage6_ORA(); break;
-				case Uop.IndIdx_RMW_Stage6: IndIdx_RMW_Stage6(); break;
-				case Uop.IndIdx_RMW_Stage7_SLO: IndIdx_RMW_Stage7_SLO(); break;
-				case Uop.IndIdx_RMW_Stage7_SRE: IndIdx_RMW_Stage7_SRE(); break;
-				case Uop.IndIdx_RMW_Stage7_RRA: IndIdx_RMW_Stage7_RRA(); break;
-				case Uop.IndIdx_RMW_Stage7_ISC: IndIdx_RMW_Stage7_ISC(); break;
-				case Uop.IndIdx_RMW_Stage7_DCP: IndIdx_RMW_Stage7_DCP(); break;
-				case Uop.IndIdx_RMW_Stage7_RLA: IndIdx_RMW_Stage7_RLA(); break;
-				case Uop.IndIdx_RMW_Stage8: IndIdx_RMW_Stage8(); break;
-				case Uop.RelBranch_Stage2_BVS: RelBranch_Stage2_BVS(); break;
-				case Uop.RelBranch_Stage2_BVC: RelBranch_Stage2_BVC(); break;
-				case Uop.RelBranch_Stage2_BMI: RelBranch_Stage2_BMI(); break;
-				case Uop.RelBranch_Stage2_BPL: RelBranch_Stage2_BPL(); break;
-				case Uop.RelBranch_Stage2_BCS: RelBranch_Stage2_BCS(); break;
-				case Uop.RelBranch_Stage2_BCC: RelBranch_Stage2_BCC(); break;
-				case Uop.RelBranch_Stage2_BEQ: RelBranch_Stage2_BEQ(); break;
-				case Uop.RelBranch_Stage2_BNE: RelBranch_Stage2_BNE(); break;
-				case Uop.RelBranch_Stage2: RelBranch_Stage2(); break;
-				case Uop.RelBranch_Stage3: RelBranch_Stage3(); break;
-				case Uop.RelBranch_Stage4: RelBranch_Stage4(); break;
-				case Uop.NOP: NOP(); break;
-				case Uop.DecS: DecS(); break;
-				case Uop.IncS: IncS(); break;
-				case Uop.JSR: JSR(); break;
-				case Uop.PullP: PullP(); break;
-				case Uop.PullPCL: PullPCL(); break;
-				case Uop.PullPCH_NoInc: PullPCH_NoInc(); break;
-				case Uop.Abs_READ_LDA: Abs_READ_LDA(); break;
-				case Uop.Abs_READ_LDY: Abs_READ_LDY(); break;
-				case Uop.Abs_READ_LDX: Abs_READ_LDX(); break;
-				case Uop.Abs_READ_BIT: Abs_READ_BIT(); break;
-				case Uop.Abs_READ_LAX: Abs_READ_LAX(); break;
-				case Uop.Abs_READ_AND: Abs_READ_AND(); break;
-				case Uop.Abs_READ_EOR: Abs_READ_EOR(); break;
-				case Uop.Abs_READ_ORA: Abs_READ_ORA(); break;
-				case Uop.Abs_READ_ADC: Abs_READ_ADC(); break;
-				case Uop.Abs_READ_CMP: Abs_READ_CMP(); break;
-				case Uop.Abs_READ_CPY: Abs_READ_CPY(); break;
-				case Uop.Abs_READ_NOP: Abs_READ_NOP(); break;
-				case Uop.Abs_READ_CPX: Abs_READ_CPX(); break;
-				case Uop.Abs_READ_SBC: Abs_READ_SBC(); break;
-				case Uop.ZpIdx_Stage3_X: ZpIdx_Stage3_X(); break;
-				case Uop.ZpIdx_Stage3_Y: ZpIdx_Stage3_Y(); break;
-				case Uop.ZpIdx_RMW_Stage4: ZpIdx_RMW_Stage4(); break;
-				case Uop.ZpIdx_RMW_Stage6: ZpIdx_RMW_Stage6(); break;
-				case Uop.ZP_READ_EOR: ZP_READ_EOR(); break;
-				case Uop.ZP_READ_BIT: ZP_READ_BIT(); break;
-				case Uop.ZP_READ_LDA: ZP_READ_LDA(); break;
-				case Uop.ZP_READ_LDY: ZP_READ_LDY(); break;
-				case Uop.ZP_READ_LDX: ZP_READ_LDX(); break;
-				case Uop.ZP_READ_LAX: ZP_READ_LAX(); break;
-				case Uop.ZP_READ_CPY: ZP_READ_CPY(); break;
-				case Uop.ZP_READ_CMP: ZP_READ_CMP(); break;
-				case Uop.ZP_READ_CPX: ZP_READ_CPX(); break;
-				case Uop.ZP_READ_ORA: ZP_READ_ORA(); break;
-				case Uop.ZP_READ_NOP: ZP_READ_NOP(); break;
-				case Uop.ZP_READ_SBC: ZP_READ_SBC(); break;
-				case Uop.ZP_READ_ADC: ZP_READ_ADC(); break;
-				case Uop.ZP_READ_AND: ZP_READ_AND(); break;
-				case Uop._Cpx: _Cpx(); break;
-				case Uop._Cpy: _Cpy(); break;
-				case Uop._Cmp: _Cmp(); break;
-				case Uop._Eor: _Eor(); break;
-				case Uop._And: _And(); break;
-				case Uop._Ora: _Ora(); break;
-				case Uop._Anc: _Anc(); break;
-				case Uop._Asr: _Asr(); break;
-				case Uop._Axs: _Axs(); break;
-				case Uop._Arr: _Arr(); break;
-				case Uop._Lxa: _Lxa(); break;
-				case Uop._Sbc: _Sbc(); break;
-				case Uop._Adc: _Adc(); break;
-				case Uop.Unsupported: Unsupported(); break;
-				case Uop.Imm_EOR: Imm_EOR(); break;
-				case Uop.Imm_ANC: Imm_ANC(); break;
-				case Uop.Imm_ASR: Imm_ASR(); break;
-				case Uop.Imm_AXS: Imm_AXS(); break;
-				case Uop.Imm_ARR: Imm_ARR(); break;
-				case Uop.Imm_LXA: Imm_LXA(); break;
-				case Uop.Imm_ORA: Imm_ORA(); break;
-				case Uop.Imm_CPY: Imm_CPY(); break;
-				case Uop.Imm_CPX: Imm_CPX(); break;
-				case Uop.Imm_CMP: Imm_CMP(); break;
-				case Uop.Imm_SBC: Imm_SBC(); break;
-				case Uop.Imm_AND: Imm_AND(); break;
-				case Uop.Imm_ADC: Imm_ADC(); break;
-				case Uop.Imm_LDA: Imm_LDA(); break;
-				case Uop.Imm_LDX: Imm_LDX(); break;
-				case Uop.Imm_LDY: Imm_LDY(); break;
-				case Uop.Imm_Unsupported: Imm_Unsupported(); break;
-				case Uop.IdxInd_Stage3: IdxInd_Stage3(); break;
-				case Uop.IdxInd_Stage4: IdxInd_Stage4(); break;
-				case Uop.IdxInd_Stage5: IdxInd_Stage5(); break;
-				case Uop.IdxInd_Stage6_READ_LDA: IdxInd_Stage6_READ_LDA(); break;
-				case Uop.IdxInd_Stage6_READ_ORA: IdxInd_Stage6_READ_ORA(); break;
-				case Uop.IdxInd_Stage6_READ_LAX: IdxInd_Stage6_READ_LAX(); break;
-				case Uop.IdxInd_Stage6_READ_CMP: IdxInd_Stage6_READ_CMP(); break;
-				case Uop.IdxInd_Stage6_READ_ADC: IdxInd_Stage6_READ_ADC(); break;
-				case Uop.IdxInd_Stage6_READ_AND: IdxInd_Stage6_READ_AND(); break;
-				case Uop.IdxInd_Stage6_READ_EOR: IdxInd_Stage6_READ_EOR(); break;
-				case Uop.IdxInd_Stage6_READ_SBC: IdxInd_Stage6_READ_SBC(); break;
-				case Uop.IdxInd_Stage6_WRITE_STA: IdxInd_Stage6_WRITE_STA(); break;
-				case Uop.IdxInd_Stage6_WRITE_SAX: IdxInd_Stage6_WRITE_SAX(); break;
-				case Uop.IdxInd_Stage6_RMW: IdxInd_Stage6_RMW(); break;
-				case Uop.IdxInd_Stage7_RMW_SLO: IdxInd_Stage7_RMW_SLO(); break;
-				case Uop.IdxInd_Stage7_RMW_ISC: IdxInd_Stage7_RMW_ISC(); break;
-				case Uop.IdxInd_Stage7_RMW_DCP: IdxInd_Stage7_RMW_DCP(); break;
-				case Uop.IdxInd_Stage7_RMW_SRE: IdxInd_Stage7_RMW_SRE(); break;
-				case Uop.IdxInd_Stage7_RMW_RRA: IdxInd_Stage7_RMW_RRA(); break;
-				case Uop.IdxInd_Stage7_RMW_RLA: IdxInd_Stage7_RMW_RLA(); break;
-				case Uop.IdxInd_Stage8_RMW: IdxInd_Stage8_RMW(); break;
-				case Uop.PushP: PushP(); break;
-				case Uop.PushA: PushA(); break;
-				case Uop.PullA_NoInc: PullA_NoInc(); break;
-				case Uop.PullP_NoInc: PullP_NoInc(); break;
-				case Uop.Imp_ASL_A: Imp_ASL_A(); break;
-				case Uop.Imp_ROL_A: Imp_ROL_A(); break;
-				case Uop.Imp_ROR_A: Imp_ROR_A(); break;
-				case Uop.Imp_LSR_A: Imp_LSR_A(); break;
-				case Uop.JMP_abs: JMP_abs(); break;
-				case Uop.IncPC: IncPC(); break;
-				case Uop.ZP_RMW_Stage3: ZP_RMW_Stage3(); break;
-				case Uop.ZP_RMW_Stage5: ZP_RMW_Stage5(); break;
-				case Uop.ZP_RMW_INC: ZP_RMW_INC(); break;
-				case Uop.ZP_RMW_DEC: ZP_RMW_DEC(); break;
-				case Uop.ZP_RMW_ASL: ZP_RMW_ASL(); break;
-				case Uop.ZP_RMW_SRE: ZP_RMW_SRE(); break;
-				case Uop.ZP_RMW_RRA: ZP_RMW_RRA(); break;
-				case Uop.ZP_RMW_DCP: ZP_RMW_DCP(); break;
-				case Uop.ZP_RMW_LSR: ZP_RMW_LSR(); break;
-				case Uop.ZP_RMW_ROR: ZP_RMW_ROR(); break;
-				case Uop.ZP_RMW_ROL: ZP_RMW_ROL(); break;
-				case Uop.ZP_RMW_SLO: ZP_RMW_SLO(); break;
-				case Uop.ZP_RMW_ISC: ZP_RMW_ISC(); break;
-				case Uop.ZP_RMW_RLA: ZP_RMW_RLA(); break;
-				case Uop.AbsIdx_Stage3_Y: AbsIdx_Stage3_Y(); break;
-				case Uop.AbsIdx_Stage3_X: AbsIdx_Stage3_X(); break;
-				case Uop.AbsIdx_READ_Stage4: AbsIdx_READ_Stage4(); break;
-				case Uop.AbsIdx_Stage4: AbsIdx_Stage4(); break;
-				case Uop.AbsIdx_WRITE_Stage5_STA: AbsIdx_WRITE_Stage5_STA(); break;
-				case Uop.AbsIdx_WRITE_Stage5_SHY: AbsIdx_WRITE_Stage5_SHY(); break;
-				case Uop.AbsIdx_WRITE_Stage5_SHX: AbsIdx_WRITE_Stage5_SHX(); break;
-				case Uop.AbsIdx_WRITE_Stage5_ERROR: AbsIdx_WRITE_Stage5_ERROR(); break;
-				case Uop.AbsIdx_RMW_Stage5: AbsIdx_RMW_Stage5(); break;
-				case Uop.AbsIdx_RMW_Stage7: AbsIdx_RMW_Stage7(); break;
-				case Uop.AbsIdx_RMW_Stage6_DEC: AbsIdx_RMW_Stage6_DEC(); break;
-				case Uop.AbsIdx_RMW_Stage6_DCP: AbsIdx_RMW_Stage6_DCP(); break;
-				case Uop.AbsIdx_RMW_Stage6_ISC: AbsIdx_RMW_Stage6_ISC(); break;
-				case Uop.AbsIdx_RMW_Stage6_INC: AbsIdx_RMW_Stage6_INC(); break;
-				case Uop.AbsIdx_RMW_Stage6_ROL: AbsIdx_RMW_Stage6_ROL(); break;
-				case Uop.AbsIdx_RMW_Stage6_LSR: AbsIdx_RMW_Stage6_LSR(); break;
-				case Uop.AbsIdx_RMW_Stage6_SLO: AbsIdx_RMW_Stage6_SLO(); break;
-				case Uop.AbsIdx_RMW_Stage6_SRE: AbsIdx_RMW_Stage6_SRE(); break;
-				case Uop.AbsIdx_RMW_Stage6_RRA: AbsIdx_RMW_Stage6_RRA(); break;
-				case Uop.AbsIdx_RMW_Stage6_RLA: AbsIdx_RMW_Stage6_RLA(); break;
-				case Uop.AbsIdx_RMW_Stage6_ASL: AbsIdx_RMW_Stage6_ASL(); break;
-				case Uop.AbsIdx_RMW_Stage6_ROR: AbsIdx_RMW_Stage6_ROR(); break;
-				case Uop.AbsIdx_READ_Stage5_LDA: AbsIdx_READ_Stage5_LDA(); break;
-				case Uop.AbsIdx_READ_Stage5_LDX: AbsIdx_READ_Stage5_LDX(); break;
-				case Uop.AbsIdx_READ_Stage5_LAX: AbsIdx_READ_Stage5_LAX(); break;
-				case Uop.AbsIdx_READ_Stage5_LDY: AbsIdx_READ_Stage5_LDY(); break;
-				case Uop.AbsIdx_READ_Stage5_ORA: AbsIdx_READ_Stage5_ORA(); break;
-				case Uop.AbsIdx_READ_Stage5_NOP: AbsIdx_READ_Stage5_NOP(); break;
-				case Uop.AbsIdx_READ_Stage5_CMP: AbsIdx_READ_Stage5_CMP(); break;
-				case Uop.AbsIdx_READ_Stage5_SBC: AbsIdx_READ_Stage5_SBC(); break;
-				case Uop.AbsIdx_READ_Stage5_ADC: AbsIdx_READ_Stage5_ADC(); break;
-				case Uop.AbsIdx_READ_Stage5_EOR: AbsIdx_READ_Stage5_EOR(); break;
-				case Uop.AbsIdx_READ_Stage5_AND: AbsIdx_READ_Stage5_AND(); break;
-				case Uop.AbsIdx_READ_Stage5_ERROR: AbsIdx_READ_Stage5_ERROR(); break;
-				case Uop.AbsInd_JMP_Stage4: AbsInd_JMP_Stage4(); break;
-				case Uop.AbsInd_JMP_Stage5: AbsInd_JMP_Stage5(); break;
-				case Uop.Abs_RMW_Stage4: Abs_RMW_Stage4(); break;
-				case Uop.Abs_RMW_Stage5_INC: Abs_RMW_Stage5_INC(); break;
-				case Uop.Abs_RMW_Stage5_DEC: Abs_RMW_Stage5_DEC(); break;
-				case Uop.Abs_RMW_Stage5_DCP: Abs_RMW_Stage5_DCP(); break;
-				case Uop.Abs_RMW_Stage5_ISC: Abs_RMW_Stage5_ISC(); break;
-				case Uop.Abs_RMW_Stage5_ASL: Abs_RMW_Stage5_ASL(); break;
-				case Uop.Abs_RMW_Stage5_ROR: Abs_RMW_Stage5_ROR(); break;
-				case Uop.Abs_RMW_Stage5_SLO: Abs_RMW_Stage5_SLO(); break;
-				case Uop.Abs_RMW_Stage5_RLA: Abs_RMW_Stage5_RLA(); break;
-				case Uop.Abs_RMW_Stage5_SRE: Abs_RMW_Stage5_SRE(); break;
-				case Uop.Abs_RMW_Stage5_RRA: Abs_RMW_Stage5_RRA(); break;
-				case Uop.Abs_RMW_Stage5_ROL: Abs_RMW_Stage5_ROL(); break;
-				case Uop.Abs_RMW_Stage5_LSR: Abs_RMW_Stage5_LSR(); break;
-				case Uop.Abs_RMW_Stage6: Abs_RMW_Stage6(); break;
-				case Uop.End_ISpecial: End_ISpecial(); break;
-				case Uop.End_SuppressInterrupt: End_SuppressInterrupt(); break;
-				case Uop.End: End(); break;
-				case Uop.End_BranchSpecial: End_BranchSpecial(); break;
-				case Uop.Jam: Jam(); break;
+				case Uop.PushPCH:
+					WriteMemory((ushort)(S-- + 0x100), (byte)(PC >> 8));
+					break;
+				case Uop.PushPCL:
+					WriteMemory((ushort)(S-- + 0x100), (byte)PC);
+					break;
+				case Uop.PushP_BRK:
+					FlagB = true;
+					WriteMemory((ushort)(S-- + 0x100), P);
+					FlagI = true;
+					ea = BRKVector;
+					break;
+				case Uop.PushP_IRQ:
+					FlagB = false;
+					WriteMemory((ushort)(S-- + 0x100), P);
+					FlagI = true;
+					ea = IRQVector;
+					break;
+				case Uop.PushP_NMI:
+					FlagB = false;
+					WriteMemory((ushort)(S-- + 0x100), P);
+					FlagI = true; //is this right?
+					ea = NMIVector;
+					break;
+				case Uop.PushP_Reset:
+					ea = ResetVector;
+					S--;
+					FlagI = true;
+					break;
+				case Uop.PushDummy:
+					S--;
+					break;
+				case Uop.FetchPCLVector:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						if (ea == BRKVector && FlagB && NMI)
+						{
+							NMI = false;
+							ea = NMIVector;
+						}
+						if (ea == IRQVector && !FlagB && NMI)
+						{
+							NMI = false;
+							ea = NMIVector;
+						}
+						alu_temp = ReadMemory((ushort)ea);
+					}
+					break;
+				case Uop.FetchPCHVector:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp += ReadMemory((ushort)(ea + 1)) << 8;
+						PC = (ushort)alu_temp;
+					}
+					break;
+				case Uop.Imp_INY:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); Y++;
+						P = (byte)((P & 0x7D) | TableNZ[Y]);
+
+					}
+					break;
+				case Uop.Imp_DEY:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); Y--;
+						P = (byte)((P & 0x7D) | TableNZ[Y]);
+
+					}
+					break;
+				case Uop.Imp_INX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); X++; P = (byte)((P & 0x7D) | TableNZ[X]);
+					}
+					break;
+				case Uop.Imp_DEX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); X--; P = (byte)((P & 0x7D) | TableNZ[X]);
+					}					
+					break;
+				case Uop.NZ_A:
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.NZ_X:
+					P = (byte)((P & 0x7D) | TableNZ[X]);
+					break;
+				case Uop.NZ_Y:
+					P = (byte)((P & 0x7D) | TableNZ[Y]);
+					break;
+				case Uop.Imp_TSX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); X = S; P = (byte)((P & 0x7D) | TableNZ[X]);
+					}
+					break;
+				case Uop.Imp_TXS:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); S = X;
+					}
+					break;
+				case Uop.Imp_TAX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); X = A; P = (byte)((P & 0x7D) | TableNZ[X]);
+					}
+					break;
+				case Uop.Imp_TAY:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); Y = A;
+						P = (byte)((P & 0x7D) | TableNZ[Y]);
+
+					}
+					break;
+				case Uop.Imp_TYA:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); A = Y; P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Imp_TXA:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); A = X; P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Imp_SEI:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); iflag_pending = true;
+					}
+					break;
+				case Uop.Imp_CLI:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); iflag_pending = false;
+					}
+					break;
+				case Uop.Imp_SEC:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); FlagC = true;
+					}
+					break;
+				case Uop.Imp_CLC:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); FlagC = false;
+					}
+					break;
+				case Uop.Imp_SED:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); FlagD = true;
+					}
+					break;
+				case Uop.Imp_CLD:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); FlagD = false;
+					}
+					break;
+				case Uop.Imp_CLV:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy(); FlagV = false;
+					}
+					break;
+				case Uop.Abs_WRITE_STA:
+					WriteMemory((ushort)((opcode3 << 8) + opcode2), A);
+					break;
+				case Uop.Abs_WRITE_STX:
+					WriteMemory((ushort)((opcode3 << 8) + opcode2), X);
+					break;
+				case Uop.Abs_WRITE_STY:
+					WriteMemory((ushort)((opcode3 << 8) + opcode2), Y);
+					break;
+				case Uop.Abs_WRITE_SAX:
+					WriteMemory((ushort)((opcode3 << 8) + opcode2), (byte)(X & A));
+					break;
+				case Uop.ZP_WRITE_STA:
+					WriteMemory(opcode2, A);
+					break;
+				case Uop.ZP_WRITE_STY:
+					WriteMemory(opcode2, Y);
+					break;
+				case Uop.ZP_WRITE_STX:
+					WriteMemory(opcode2, X);
+					break;
+				case Uop.ZP_WRITE_SAX:
+					WriteMemory(opcode2, (byte)(X & A));
+					break;
+				case Uop.IndIdx_Stage3:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						ea = ReadMemory(opcode2);
+					}
+					break;
+				case Uop.IndIdx_Stage4:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ea + Y;
+						ea = (ReadMemory((byte)(opcode2 + 1)) << 8)
+							| ((alu_temp & 0xFF));
+					}
+					break;
+				case Uop.IndIdx_WRITE_Stage5:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						ReadMemory((ushort)ea);
+						ea += (alu_temp >> 8) << 8;
+					}
+					break;
+				case Uop.IndIdx_READ_Stage5:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						if (!alu_temp.Bit(8))
+						{
+							mi++;
+							ExecuteOneRetry();
+							return;
+						}
+						else
+						{
+							ReadMemory((ushort)ea);
+							ea = (ushort)(ea + 0x100);
+						}
+					}
+					break;
+				case Uop.IndIdx_RMW_Stage5:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						if (alu_temp.Bit(8))
+							ea = (ushort)(ea + 0x100);
+						ReadMemory((ushort)ea);
+					}
+					break;
+				case Uop.IndIdx_WRITE_Stage6_STA:
+					WriteMemory((ushort)ea, A);
+					break;
+				case Uop.IndIdx_WRITE_Stage6_SHA:
+					WriteMemory((ushort)ea, (byte)(A & X & 7));
+					break;
+				case Uop.IndIdx_READ_Stage6_LDA:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						A = ReadMemory((ushort)ea);
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.IndIdx_READ_Stage6_CMP:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						value8 = (byte)alu_temp;
+						value16 = (ushort)(A - value8);
+						FlagC = (A >= value8);
+						P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					}
+					break;
+				case Uop.IndIdx_READ_Stage6_AND:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						A &= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.IndIdx_READ_Stage6_EOR:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						A ^= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.IndIdx_READ_Stage6_LAX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						A = X = ReadMemory((ushort)ea);
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.IndIdx_READ_Stage6_ADC:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						//TODO - an extra cycle penalty?
+						value8 = (byte)alu_temp;
+						if (FlagD && BCD_Enabled)
+						{
+							lo = (A & 0x0F) + (value8 & 0x0F) + (FlagC ? 1 : 0);
+							hi = (A & 0xF0) + (value8 & 0xF0);
+							if (lo > 0x09)
+							{
+								hi += 0x10;
+								lo += 0x06;
+							}
+							if (hi > 0x90) hi += 0x60;
+							FlagV = (~(A ^ value8) & (A ^ hi) & 0x80) != 0;
+							FlagC = hi > 0xFF;
+							A = (byte)((lo & 0x0F) | (hi & 0xF0));
+						}
+						else
+						{
+							tempint = value8 + A + (FlagC ? 1 : 0);
+							FlagV = (~(A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = tempint > 0xFF;
+							A = (byte)tempint;
+						}
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.IndIdx_READ_Stage6_SBC:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						value8 = (byte)alu_temp;
+						tempint = A - value8 - (FlagC ? 0 : 1);
+						if (FlagD && BCD_Enabled)
+						{
+							lo = (A & 0x0F) - (value8 & 0x0F) - (FlagC ? 0 : 1);
+							hi = (A & 0xF0) - (value8 & 0xF0);
+							if ((lo & 0xF0) != 0) lo -= 0x06;
+							if ((lo & 0x80) != 0) hi -= 0x10;
+							if ((hi & 0x0F00) != 0) hi -= 0x60;
+							FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = (hi & 0xFF00) == 0;
+							A = (byte)((lo & 0x0F) | (hi & 0xF0));
+						}
+						else
+						{
+							FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = tempint >= 0;
+							A = (byte)tempint;
+						}
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.IndIdx_READ_Stage6_ORA:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						A |= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.IndIdx_RMW_Stage6:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+					}
+					break;
+				case Uop.IndIdx_RMW_Stage7_SLO:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 0x80) != 0;
+					alu_temp = value8 = (byte)((value8 << 1));
+					A |= value8;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.IndIdx_RMW_Stage7_SRE:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 1) != 0;
+					alu_temp = value8 = (byte)(value8 >> 1);
+					A ^= value8;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.IndIdx_RMW_Stage7_RRA:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
+					FlagC = (temp8 & 1) != 0;
+					//TODO - an extra cycle penalty?
+					value8 = (byte)alu_temp;
+					if (FlagD && BCD_Enabled)
+					{
+						lo = (A & 0x0F) + (value8 & 0x0F) + (FlagC ? 1 : 0);
+						hi = (A & 0xF0) + (value8 & 0xF0);
+						if (lo > 0x09)
+						{
+							hi += 0x10;
+							lo += 0x06;
+						}
+						if (hi > 0x90) hi += 0x60;
+						FlagV = (~(A ^ value8) & (A ^ hi) & 0x80) != 0;
+						FlagC = hi > 0xFF;
+						A = (byte)((lo & 0x0F) | (hi & 0xF0));
+					}
+					else
+					{
+						tempint = value8 + A + (FlagC ? 1 : 0);
+						FlagV = (~(A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = tempint > 0xFF;
+						A = (byte)tempint;
+					}
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.IndIdx_RMW_Stage7_ISC:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)(value8 + 1);
+					value8 = (byte)alu_temp;
+					tempint = A - value8 - (FlagC ? 0 : 1);
+					if (FlagD && BCD_Enabled)
+					{
+						lo = (A & 0x0F) - (value8 & 0x0F) - (FlagC ? 0 : 1);
+						hi = (A & 0xF0) - (value8 & 0xF0);
+						if ((lo & 0xF0) != 0) lo -= 0x06;
+						if ((lo & 0x80) != 0) hi -= 0x10;
+						if ((hi & 0x0F00) != 0) hi -= 0x60;
+						FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = (hi & 0xFF00) == 0;
+						A = (byte)((lo & 0x0F) | (hi & 0xF0));
+					}
+					else
+					{
+						FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = tempint >= 0;
+						A = (byte)tempint;
+					}
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.IndIdx_RMW_Stage7_DCP:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)(value8 - 1);
+					FlagC = (temp8 & 1) != 0;
+					value8 = (byte)alu_temp;
+					value16 = (ushort)(A - value8);
+					FlagC = (A >= value8);
+					P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					break;
+				case Uop.IndIdx_RMW_Stage7_RLA:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
+					FlagC = (temp8 & 0x80) != 0;
+					A &= value8;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.IndIdx_RMW_Stage8:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					break;
+				case Uop.RelBranch_Stage2_BVS:
+					branch_taken = FlagV == true;
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						opcode2 = ReadMemory(PC++);
+						if (branch_taken)
+						{
+							branch_taken = false;
+							//if the branch is taken, we enter a different bit of microcode to calculate the PC and complete the branch
+							opcode = VOP_RelativeStuff;
+							mi = -1;
+						}
+					}
+					break;
+				case Uop.RelBranch_Stage2_BVC:
+					branch_taken = FlagV == false;
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						opcode2 = ReadMemory(PC++);
+						if (branch_taken)
+						{
+							branch_taken = false;
+							//if the branch is taken, we enter a different bit of microcode to calculate the PC and complete the branch
+							opcode = VOP_RelativeStuff;
+							mi = -1;
+						}
+					}
+					break;
+				case Uop.RelBranch_Stage2_BMI:
+					branch_taken = FlagN == true;
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						opcode2 = ReadMemory(PC++);
+						if (branch_taken)
+						{
+							branch_taken = false;
+							//if the branch is taken, we enter a different bit of microcode to calculate the PC and complete the branch
+							opcode = VOP_RelativeStuff;
+							mi = -1;
+						}
+					}
+					break;
+				case Uop.RelBranch_Stage2_BPL:
+					branch_taken = FlagN == false;
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						opcode2 = ReadMemory(PC++);
+						if (branch_taken)
+						{
+							branch_taken = false;
+							//if the branch is taken, we enter a different bit of microcode to calculate the PC and complete the branch
+							opcode = VOP_RelativeStuff;
+							mi = -1;
+						}
+					}
+					break;
+				case Uop.RelBranch_Stage2_BCS:
+					branch_taken = FlagC == true;
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						opcode2 = ReadMemory(PC++);
+						if (branch_taken)
+						{
+							branch_taken = false;
+							//if the branch is taken, we enter a different bit of microcode to calculate the PC and complete the branch
+							opcode = VOP_RelativeStuff;
+							mi = -1;
+						}
+					}
+					break;
+				case Uop.RelBranch_Stage2_BCC:
+					branch_taken = FlagC == false;
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						opcode2 = ReadMemory(PC++);
+						if (branch_taken)
+						{
+							branch_taken = false;
+							//if the branch is taken, we enter a different bit of microcode to calculate the PC and complete the branch
+							opcode = VOP_RelativeStuff;
+							mi = -1;
+						}
+					}
+					break;
+				case Uop.RelBranch_Stage2_BEQ:
+					branch_taken = FlagZ == true;
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						opcode2 = ReadMemory(PC++);
+						if (branch_taken)
+						{
+							branch_taken = false;
+							//if the branch is taken, we enter a different bit of microcode to calculate the PC and complete the branch
+							opcode = VOP_RelativeStuff;
+							mi = -1;
+						}
+					}
+					break;
+				case Uop.RelBranch_Stage2_BNE:
+					branch_taken = FlagZ == false;
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						opcode2 = ReadMemory(PC++);
+						if (branch_taken)
+						{
+							branch_taken = false;
+							//if the branch is taken, we enter a different bit of microcode to calculate the PC and complete the branch
+							opcode = VOP_RelativeStuff;
+							mi = -1;
+						}
+					}
+					break;
+				case Uop.RelBranch_Stage2:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						opcode2 = ReadMemory(PC++);
+						if (branch_taken)
+						{
+							branch_taken = false;
+							//if the branch is taken, we enter a different bit of microcode to calculate the PC and complete the branch
+							opcode = VOP_RelativeStuff;
+							mi = -1;
+						}
+					}
+					break;
+				case Uop.RelBranch_Stage3:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+					    FetchDummy();
+					    alu_temp = (byte)PC + (int)(sbyte)opcode2;
+					    PC &= 0xFF00;
+					    PC |= (ushort)((alu_temp & 0xFF));
+					    if (alu_temp.Bit(8))
+					    {
+					        //we need to carry the add, and then we'll be ready to fetch the next instruction
+					        opcode = VOP_RelativeStuff2;
+					        mi = -1;
+					    }
+					    else
+					    {
+					        //to pass cpu_interrupts_v2/5-branch_delays_irq we need to handle a quirk here
+					        //if we decide to interrupt in the next cycle, this condition will cause it to get deferred by one instruction
+					        if (!interrupt_pending)
+					            branch_irq_hack = true;
+					    }
+					}
+					break;
+				case Uop.RelBranch_Stage4:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+					    FetchDummy();
+					    if (alu_temp.Bit(31))
+					        PC = (ushort)(PC - 0x100);
+					    else PC = (ushort)(PC + 0x100);
+					}
+					break;
+				case Uop.NOP:
+					rdy_freeze = !RDY;
+					break;
+				case Uop.DecS:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+					    S--;
+					}
+					break;
+				case Uop.IncS:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+					    S++;
+					}
+					break;
+				case Uop.JSR:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						PC = (ushort)((ReadMemory((ushort)(PC)) << 8) + opcode2);
+					}
+					break;
+				case Uop.PullP:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						P = ReadMemory((ushort)(S++ + 0x100));
+						FlagT = true; //force T always to remain true
+					}
+					break;
+				case Uop.PullPCL:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						PC &= 0xFF00;
+						PC |= ReadMemory((ushort)(S++ + 0x100));
+					}
+					break;
+				case Uop.PullPCH_NoInc:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						PC &= 0xFF;
+						PC |= (ushort)(ReadMemory((ushort)(S + 0x100)) << 8);
+					}
+					break;
+				case Uop.Abs_READ_LDA:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						A = ReadMemory((ushort)((opcode3 << 8) + opcode2));
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Abs_READ_LDY:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						Y = ReadMemory((ushort)((opcode3 << 8) + opcode2));
+
+						P = (byte)((P & 0x7D) | TableNZ[Y]);
+
+					}
+					break;
+				case Uop.Abs_READ_LDX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						X = ReadMemory((ushort)((opcode3 << 8) + opcode2));
+						P = (byte)((P & 0x7D) | TableNZ[X]);
+					}
+					break;
+				case Uop.Abs_READ_BIT:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
+						FlagN = (alu_temp & 0x80) != 0;
+						FlagV = (alu_temp & 0x40) != 0;
+						FlagZ = (A & alu_temp) == 0;
+					}
+					break;
+				case Uop.Abs_READ_LAX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
+						A = ReadMemory((ushort)((opcode3 << 8) + opcode2));
+						X = A;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Abs_READ_AND:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
+						A &= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Abs_READ_EOR:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
+						A ^= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Abs_READ_ORA:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
+						A |= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Abs_READ_ADC:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
+						//TODO - an extra cycle penalty?
+						value8 = (byte)alu_temp;
+						if (FlagD && BCD_Enabled)
+						{
+							lo = (A & 0x0F) + (value8 & 0x0F) + (FlagC ? 1 : 0);
+							hi = (A & 0xF0) + (value8 & 0xF0);
+							if (lo > 0x09)
+							{
+								hi += 0x10;
+								lo += 0x06;
+							}
+							if (hi > 0x90) hi += 0x60;
+							FlagV = (~(A ^ value8) & (A ^ hi) & 0x80) != 0;
+							FlagC = hi > 0xFF;
+							A = (byte)((lo & 0x0F) | (hi & 0xF0));
+						}
+						else
+						{
+							tempint = value8 + A + (FlagC ? 1 : 0);
+							FlagV = (~(A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = tempint > 0xFF;
+							A = (byte)tempint;
+						}
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Abs_READ_CMP:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
+						value8 = (byte)alu_temp;
+						value16 = (ushort)(A - value8);
+						FlagC = (A >= value8);
+						P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					}
+					break;
+				case Uop.Abs_READ_CPY:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
+						value8 = (byte)alu_temp;
+						value16 = (ushort)(Y - value8);
+						FlagC = (Y >= value8);
+						P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					}
+					break;
+				case Uop.Abs_READ_NOP:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
+					}
+					break;
+				case Uop.Abs_READ_CPX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
+						value8 = (byte)alu_temp;
+						value16 = (ushort)(X - value8);
+						FlagC = (X >= value8);
+						P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					}
+					break;
+				case Uop.Abs_READ_SBC:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)((opcode3 << 8) + opcode2));
+						value8 = (byte)alu_temp;
+						tempint = A - value8 - (FlagC ? 0 : 1);
+						if (FlagD && BCD_Enabled)
+						{
+							lo = (A & 0x0F) - (value8 & 0x0F) - (FlagC ? 0 : 1);
+							hi = (A & 0xF0) - (value8 & 0xF0);
+							if ((lo & 0xF0) != 0) lo -= 0x06;
+							if ((lo & 0x80) != 0) hi -= 0x10;
+							if ((hi & 0x0F00) != 0) hi -= 0x60;
+							FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = (hi & 0xFF00) == 0;
+							A = (byte)((lo & 0x0F) | (hi & 0xF0));
+						}
+						else
+						{
+							FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = tempint >= 0;
+							A = (byte)tempint;
+						}
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.ZpIdx_Stage3_X:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						ReadMemory(opcode2);
+						opcode2 = (byte)(opcode2 + X); //a bit sneaky to shove this into opcode2... but we can reuse all the zero page uops if we do that
+					}
+					break;
+				case Uop.ZpIdx_Stage3_Y:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						ReadMemory(opcode2);
+						opcode2 = (byte)(opcode2 + Y); //a bit sneaky to shove this into opcode2... but we can reuse all the zero page uops if we do that
+					}
+					break;
+				case Uop.ZpIdx_RMW_Stage4:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(opcode2);
+					}
+					break;
+				case Uop.ZpIdx_RMW_Stage6:
+					WriteMemory(opcode2, (byte)alu_temp);
+					break;
+				case Uop.ZP_READ_EOR:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(opcode2);
+						A ^= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.ZP_READ_BIT:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(opcode2);
+						FlagN = (alu_temp & 0x80) != 0;
+						FlagV = (alu_temp & 0x40) != 0;
+						FlagZ = (A & alu_temp) == 0;
+					}
+					break;
+				case Uop.ZP_READ_LDA:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						A = ReadMemory(opcode2);
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.ZP_READ_LDY:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						Y = ReadMemory(opcode2);
+
+						P = (byte)((P & 0x7D) | TableNZ[Y]);
+
+					}
+					break;
+				case Uop.ZP_READ_LDX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						X = ReadMemory(opcode2);
+						P = (byte)((P & 0x7D) | TableNZ[X]);
+					}
+					break;
+				case Uop.ZP_READ_LAX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						//?? is this right??
+						X = ReadMemory(opcode2);
+						A = X;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.ZP_READ_CPY:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(opcode2);
+						value8 = (byte)alu_temp;
+						value16 = (ushort)(Y - value8);
+						FlagC = (Y >= value8);
+						P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					}
+					break;
+				case Uop.ZP_READ_CMP:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(opcode2);
+						value8 = (byte)alu_temp;
+						value16 = (ushort)(A - value8);
+						FlagC = (A >= value8);
+						P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					}
+					break;
+				case Uop.ZP_READ_CPX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(opcode2);
+						value8 = (byte)alu_temp;
+						value16 = (ushort)(X - value8);
+						FlagC = (X >= value8);
+						P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					}
+					break;
+				case Uop.ZP_READ_ORA:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(opcode2);
+						A |= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.ZP_READ_NOP:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						ReadMemory(opcode2); //just a dummy
+					}
+					break;
+				case Uop.ZP_READ_SBC:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(opcode2);
+						value8 = (byte)alu_temp;
+						tempint = A - value8 - (FlagC ? 0 : 1);
+						if (FlagD && BCD_Enabled)
+						{
+							lo = (A & 0x0F) - (value8 & 0x0F) - (FlagC ? 0 : 1);
+							hi = (A & 0xF0) - (value8 & 0xF0);
+							if ((lo & 0xF0) != 0) lo -= 0x06;
+							if ((lo & 0x80) != 0) hi -= 0x10;
+							if ((hi & 0x0F00) != 0) hi -= 0x60;
+							FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = (hi & 0xFF00) == 0;
+							A = (byte)((lo & 0x0F) | (hi & 0xF0));
+						}
+						else
+						{
+							FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = tempint >= 0;
+							A = (byte)tempint;
+						}
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.ZP_READ_ADC:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(opcode2);
+						//TODO - an extra cycle penalty?
+						value8 = (byte)alu_temp;
+						if (FlagD && BCD_Enabled)
+						{
+							lo = (A & 0x0F) + (value8 & 0x0F) + (FlagC ? 1 : 0);
+							hi = (A & 0xF0) + (value8 & 0xF0);
+							if (lo > 0x09)
+							{
+								hi += 0x10;
+								lo += 0x06;
+							}
+							if (hi > 0x90) hi += 0x60;
+							FlagV = (~(A ^ value8) & (A ^ hi) & 0x80) != 0;
+							FlagC = hi > 0xFF;
+							A = (byte)((lo & 0x0F) | (hi & 0xF0));
+						}
+						else
+						{
+							tempint = value8 + A + (FlagC ? 1 : 0);
+							FlagV = (~(A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = tempint > 0xFF;
+							A = (byte)tempint;
+						}
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.ZP_READ_AND:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(opcode2);
+						A &= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop._Cpx:
+					value8 = (byte)alu_temp;
+					value16 = (ushort)(X - value8);
+					FlagC = (X >= value8);
+					P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					break;
+				case Uop._Cpy:
+					value8 = (byte)alu_temp;
+					value16 = (ushort)(Y - value8);
+					FlagC = (Y >= value8);
+					P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					break;
+				case Uop._Cmp:
+					value8 = (byte)alu_temp;
+					value16 = (ushort)(A - value8);
+					FlagC = (A >= value8);
+					P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					break;
+				case Uop._Eor:
+					A ^= (byte)alu_temp;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop._And:
+					A &= (byte)alu_temp;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop._Ora:
+					A |= (byte)alu_temp;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop._Anc:
+					A &= (byte)alu_temp;
+					FlagC = A.Bit(7);
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop._Asr:
+					A &= (byte)alu_temp;
+					FlagC = A.Bit(0);
+					A >>= 1;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop._Axs:
+					X &= A;
+					alu_temp = X - (byte)alu_temp;
+					X = (byte)alu_temp;
+					FlagC = !alu_temp.Bit(8);
+					P = (byte)((P & 0x7D) | TableNZ[X]);
+					break;
+				case Uop._Arr:
+					A &= (byte)alu_temp;
+					booltemp = A.Bit(0);
+					A = (byte)((A >> 1) | (FlagC ? 0x80 : 0x00));
+					FlagC = booltemp;
+					if (A.Bit(5))
+						if (A.Bit(6))
+						{ FlagC = true; FlagV = false; }
+						else { FlagV = true; FlagC = false; }
+					else if (A.Bit(6))
+					{ FlagV = true; FlagC = true; }
+					else { FlagV = false; FlagC = false; }
+					FlagZ = (A == 0);
+					break;
+				case Uop._Lxa:
+					A |= 0xFF; //there is some debate about what this should be. it may depend on the 6502 variant. this is suggested by qeed's doc for the nes and passes blargg's instruction test
+					A &= (byte)alu_temp;
+					X = A;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop._Sbc:
+					value8 = (byte)alu_temp;
+					tempint = A - value8 - (FlagC ? 0 : 1);
+					if (FlagD && BCD_Enabled)
+					{
+						lo = (A & 0x0F) - (value8 & 0x0F) - (FlagC ? 0 : 1);
+						hi = (A & 0xF0) - (value8 & 0xF0);
+						if ((lo & 0xF0) != 0) lo -= 0x06;
+						if ((lo & 0x80) != 0) hi -= 0x10;
+						if ((hi & 0x0F00) != 0) hi -= 0x60;
+						FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = (hi & 0xFF00) == 0;
+						A = (byte)((lo & 0x0F) | (hi & 0xF0));
+					}
+					else
+					{
+						FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = tempint >= 0;
+						A = (byte)tempint;
+					}
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop._Adc:
+					//TODO - an extra cycle penalty?
+					value8 = (byte)alu_temp;
+					if (FlagD && BCD_Enabled)
+					{
+						lo = (A & 0x0F) + (value8 & 0x0F) + (FlagC ? 1 : 0);
+						hi = (A & 0xF0) + (value8 & 0xF0);
+						if (lo > 0x09)
+						{
+							hi += 0x10;
+							lo += 0x06;
+						}
+						if (hi > 0x90) hi += 0x60;
+						FlagV = (~(A ^ value8) & (A ^ hi) & 0x80) != 0;
+						FlagC = hi > 0xFF;
+						A = (byte)((lo & 0x0F) | (hi & 0xF0));
+					}
+					else
+					{
+						tempint = value8 + A + (FlagC ? 1 : 0);
+						FlagV = (~(A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = tempint > 0xFF;
+						A = (byte)tempint;
+					}
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.Unsupported:
+					break;
+				case Uop.Imm_EOR:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(PC++);
+						A ^= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Imm_ANC:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(PC++);
+						A &= (byte)alu_temp;
+						FlagC = A.Bit(7);
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Imm_ASR:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(PC++);
+						A &= (byte)alu_temp;
+						FlagC = A.Bit(0);
+						A >>= 1;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Imm_AXS:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(PC++);
+						X &= A;
+						alu_temp = X - (byte)alu_temp;
+						X = (byte)alu_temp;
+						FlagC = !alu_temp.Bit(8);
+						P = (byte)((P & 0x7D) | TableNZ[X]);
+					}
+					break;
+				case Uop.Imm_ARR:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(PC++);
+						A &= (byte)alu_temp;
+						booltemp = A.Bit(0);
+						A = (byte)((A >> 1) | (FlagC ? 0x80 : 0x00));
+						FlagC = booltemp;
+						if (A.Bit(5))
+							if (A.Bit(6))
+							{ FlagC = true; FlagV = false; }
+							else { FlagV = true; FlagC = false; }
+						else if (A.Bit(6))
+						{ FlagV = true; FlagC = true; }
+						else { FlagV = false; FlagC = false; }
+						FlagZ = (A == 0);
+					}
+					break;
+				case Uop.Imm_LXA:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(PC++);
+						A |= 0xFF; //there is some debate about what this should be. it may depend on the 6502 variant. this is suggested by qeed's doc for the nes and passes blargg's instruction test
+						A &= (byte)alu_temp;
+						X = A;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Imm_ORA:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(PC++);
+						A |= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Imm_CPY:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(PC++);
+						value8 = (byte)alu_temp;
+						value16 = (ushort)(Y - value8);
+						FlagC = (Y >= value8);
+						P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					}
+					break;
+				case Uop.Imm_CPX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(PC++);
+						value8 = (byte)alu_temp;
+						value16 = (ushort)(X - value8);
+						FlagC = (X >= value8);
+						P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					}
+					break;
+				case Uop.Imm_CMP:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(PC++);
+						value8 = (byte)alu_temp;
+						value16 = (ushort)(A - value8);
+						FlagC = (A >= value8);
+						P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					}
+					break;
+				case Uop.Imm_SBC:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(PC++);
+						value8 = (byte)alu_temp;
+						tempint = A - value8 - (FlagC ? 0 : 1);
+						if (FlagD && BCD_Enabled)
+						{
+							lo = (A & 0x0F) - (value8 & 0x0F) - (FlagC ? 0 : 1);
+							hi = (A & 0xF0) - (value8 & 0xF0);
+							if ((lo & 0xF0) != 0) lo -= 0x06;
+							if ((lo & 0x80) != 0) hi -= 0x10;
+							if ((hi & 0x0F00) != 0) hi -= 0x60;
+							FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = (hi & 0xFF00) == 0;
+							A = (byte)((lo & 0x0F) | (hi & 0xF0));
+						}
+						else
+						{
+							FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = tempint >= 0;
+							A = (byte)tempint;
+						}
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Imm_AND:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(PC++);
+						A &= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Imm_ADC:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(PC++);
+						//TODO - an extra cycle penalty?
+						value8 = (byte)alu_temp;
+						if (FlagD && BCD_Enabled)
+						{
+							lo = (A & 0x0F) + (value8 & 0x0F) + (FlagC ? 1 : 0);
+							hi = (A & 0xF0) + (value8 & 0xF0);
+							if (lo > 0x09)
+							{
+								hi += 0x10;
+								lo += 0x06;
+							}
+							if (hi > 0x90) hi += 0x60;
+							FlagV = (~(A ^ value8) & (A ^ hi) & 0x80) != 0;
+							FlagC = hi > 0xFF;
+							A = (byte)((lo & 0x0F) | (hi & 0xF0));
+						}
+						else
+						{
+							tempint = value8 + A + (FlagC ? 1 : 0);
+							FlagV = (~(A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = tempint > 0xFF;
+							A = (byte)tempint;
+						}
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Imm_LDA:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						A = ReadMemory(PC++);
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Imm_LDX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						X = ReadMemory(PC++);
+						P = (byte)((P & 0x7D) | TableNZ[X]);
+					}
+					break;
+				case Uop.Imm_LDY:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						Y = ReadMemory(PC++);
+
+						P = (byte)((P & 0x7D) | TableNZ[Y]);
+
+					}
+					break;
+				case Uop.Imm_Unsupported:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						ReadMemory(PC++);
+					}
+					break;
+				case Uop.IdxInd_Stage3:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						ReadMemory(opcode2); //dummy?
+						alu_temp = (opcode2 + X) & 0xFF;
+					}
+					break;
+				case Uop.IdxInd_Stage4:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						ea = ReadMemory((ushort)alu_temp);
+					}
+					break;
+				case Uop.IdxInd_Stage5:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						ea += (ReadMemory((byte)(alu_temp + 1)) << 8);
+					}
+					break;
+				case Uop.IdxInd_Stage6_READ_LDA:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						//TODO make uniform with others
+						A = ReadMemory((ushort)ea);
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.IdxInd_Stage6_READ_ORA:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						A |= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.IdxInd_Stage6_READ_LAX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						A = X = ReadMemory((ushort)ea);
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.IdxInd_Stage6_READ_CMP:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						value8 = (byte)alu_temp;
+						value16 = (ushort)(A - value8);
+						FlagC = (A >= value8);
+						P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					}
+					break;
+				case Uop.IdxInd_Stage6_READ_ADC:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						//TODO - an extra cycle penalty?
+						value8 = (byte)alu_temp;
+						if (FlagD && BCD_Enabled)
+						{
+							lo = (A & 0x0F) + (value8 & 0x0F) + (FlagC ? 1 : 0);
+							hi = (A & 0xF0) + (value8 & 0xF0);
+							if (lo > 0x09)
+							{
+								hi += 0x10;
+								lo += 0x06;
+							}
+							if (hi > 0x90) hi += 0x60;
+							FlagV = (~(A ^ value8) & (A ^ hi) & 0x80) != 0;
+							FlagC = hi > 0xFF;
+							A = (byte)((lo & 0x0F) | (hi & 0xF0));
+						}
+						else
+						{
+							tempint = value8 + A + (FlagC ? 1 : 0);
+							FlagV = (~(A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = tempint > 0xFF;
+							A = (byte)tempint;
+						}
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.IdxInd_Stage6_READ_AND:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						A &= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.IdxInd_Stage6_READ_EOR:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						A ^= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.IdxInd_Stage6_READ_SBC:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						value8 = (byte)alu_temp;
+						tempint = A - value8 - (FlagC ? 0 : 1);
+						if (FlagD && BCD_Enabled)
+						{
+							lo = (A & 0x0F) - (value8 & 0x0F) - (FlagC ? 0 : 1);
+							hi = (A & 0xF0) - (value8 & 0xF0);
+							if ((lo & 0xF0) != 0) lo -= 0x06;
+							if ((lo & 0x80) != 0) hi -= 0x10;
+							if ((hi & 0x0F00) != 0) hi -= 0x60;
+							FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = (hi & 0xFF00) == 0;
+							A = (byte)((lo & 0x0F) | (hi & 0xF0));
+						}
+						else
+						{
+							FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = tempint >= 0;
+							A = (byte)tempint;
+						}
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.IdxInd_Stage6_WRITE_STA:
+					WriteMemory((ushort)ea, A);
+					break;
+				case Uop.IdxInd_Stage6_WRITE_SAX:
+					alu_temp = A & X;
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					//flag writing skipped on purpose
+					break;
+				case Uop.IdxInd_Stage6_RMW:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+					}
+					break;
+				case Uop.IdxInd_Stage7_RMW_SLO:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 0x80) != 0;
+					alu_temp = value8 = (byte)((value8 << 1));
+					A |= value8;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.IdxInd_Stage7_RMW_ISC:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)(value8 + 1);
+					value8 = (byte)alu_temp;
+					tempint = A - value8 - (FlagC ? 0 : 1);
+					if (FlagD && BCD_Enabled)
+					{
+						lo = (A & 0x0F) - (value8 & 0x0F) - (FlagC ? 0 : 1);
+						hi = (A & 0xF0) - (value8 & 0xF0);
+						if ((lo & 0xF0) != 0) lo -= 0x06;
+						if ((lo & 0x80) != 0) hi -= 0x10;
+						if ((hi & 0x0F00) != 0) hi -= 0x60;
+						FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = (hi & 0xFF00) == 0;
+						A = (byte)((lo & 0x0F) | (hi & 0xF0));
+					}
+					else
+					{
+						FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = tempint >= 0;
+						A = (byte)tempint;
+					}
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.IdxInd_Stage7_RMW_DCP:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)(value8 - 1);
+					FlagC = (temp8 & 1) != 0;
+					value8 = (byte)alu_temp;
+					value16 = (ushort)(A - value8);
+					FlagC = (A >= value8);
+					P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					break;
+				case Uop.IdxInd_Stage7_RMW_SRE:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 1) != 0;
+					alu_temp = value8 = (byte)(value8 >> 1);
+					A ^= value8;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.IdxInd_Stage7_RMW_RRA:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
+					FlagC = (temp8 & 1) != 0;
+					//TODO - an extra cycle penalty?
+					value8 = (byte)alu_temp;
+					if (FlagD && BCD_Enabled)
+					{
+						lo = (A & 0x0F) + (value8 & 0x0F) + (FlagC ? 1 : 0);
+						hi = (A & 0xF0) + (value8 & 0xF0);
+						if (lo > 0x09)
+						{
+							hi += 0x10;
+							lo += 0x06;
+						}
+						if (hi > 0x90) hi += 0x60;
+						FlagV = (~(A ^ value8) & (A ^ hi) & 0x80) != 0;
+						FlagC = hi > 0xFF;
+						A = (byte)((lo & 0x0F) | (hi & 0xF0));
+					}
+					else
+					{
+						tempint = value8 + A + (FlagC ? 1 : 0);
+						FlagV = (~(A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = tempint > 0xFF;
+						A = (byte)tempint;
+					}
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.IdxInd_Stage7_RMW_RLA:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
+					FlagC = (temp8 & 0x80) != 0;
+					A &= value8;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.IdxInd_Stage8_RMW:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					break;
+				case Uop.PushP:
+					FlagB = true;
+					WriteMemory((ushort)(S-- + 0x100), P);
+					break;
+				case Uop.PushA:
+					WriteMemory((ushort)(S-- + 0x100), A);
+					break;
+				case Uop.PullA_NoInc:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						A = ReadMemory((ushort)(S + 0x100));
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.PullP_NoInc:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						my_iflag = FlagI;
+						P = ReadMemory((ushort)(S + 0x100));
+						iflag_pending = FlagI;
+						FlagI = my_iflag;
+						FlagT = true; //force T always to remain true
+
+					}
+					break;
+				case Uop.Imp_ASL_A:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy();
+						FlagC = (A & 0x80) != 0;
+						A = (byte)(A << 1);
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Imp_ROL_A:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy();
+						temp8 = A;
+						A = (byte)((A << 1) | (P & 1));
+						FlagC = (temp8 & 0x80) != 0;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Imp_ROR_A:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy();
+						temp8 = A;
+						A = (byte)((A >> 1) | ((P & 1) << 7));
+						FlagC = (temp8 & 1) != 0;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.Imp_LSR_A:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						FetchDummy();
+						FlagC = (A & 1) != 0;
+						A = (byte)(A >> 1);
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.JMP_abs:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						PC = (ushort)((ReadMemory(PC) << 8) + opcode2);
+					}
+					break;
+				case Uop.IncPC:
+					PC++;
+					break;
+				case Uop.ZP_RMW_Stage3:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory(opcode2);
+					}
+					break;
+				case Uop.ZP_RMW_Stage5:
+					WriteMemory(opcode2, (byte)alu_temp);
+					break;
+				case Uop.ZP_RMW_INC:
+					WriteMemory(opcode2, (byte)alu_temp);
+					alu_temp = (byte)((alu_temp + 1) & 0xFF);
+					P = (byte)((P & 0x7D) | TableNZ[alu_temp]);
+					break;
+				case Uop.ZP_RMW_DEC:
+					WriteMemory(opcode2, (byte)alu_temp);
+					alu_temp = (byte)((alu_temp - 1) & 0xFF);
+					P = (byte)((P & 0x7D) | TableNZ[alu_temp]);
+					break;
+				case Uop.ZP_RMW_ASL:
+					WriteMemory(opcode2, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 0x80) != 0;
+					alu_temp = value8 = (byte)(value8 << 1);
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.ZP_RMW_SRE:
+					WriteMemory(opcode2, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 1) != 0;
+					alu_temp = value8 = (byte)(value8 >> 1);
+					A ^= value8;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.ZP_RMW_RRA:
+					WriteMemory(opcode2, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
+					FlagC = (temp8 & 1) != 0;
+					//TODO - an extra cycle penalty?
+					value8 = (byte)alu_temp;
+					if (FlagD && BCD_Enabled)
+					{
+						lo = (A & 0x0F) + (value8 & 0x0F) + (FlagC ? 1 : 0);
+						hi = (A & 0xF0) + (value8 & 0xF0);
+						if (lo > 0x09)
+						{
+							hi += 0x10;
+							lo += 0x06;
+						}
+						if (hi > 0x90) hi += 0x60;
+						FlagV = (~(A ^ value8) & (A ^ hi) & 0x80) != 0;
+						FlagC = hi > 0xFF;
+						A = (byte)((lo & 0x0F) | (hi & 0xF0));
+					}
+					else
+					{
+						tempint = value8 + A + (FlagC ? 1 : 0);
+						FlagV = (~(A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = tempint > 0xFF;
+						A = (byte)tempint;
+					}
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.ZP_RMW_DCP:
+					WriteMemory(opcode2, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)(value8 - 1);
+					FlagC = (temp8 & 1) != 0;
+					value8 = (byte)alu_temp;
+					value16 = (ushort)(A - value8);
+					FlagC = (A >= value8);
+					P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					break;
+				case Uop.ZP_RMW_LSR:
+					WriteMemory(opcode2, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 1) != 0;
+					alu_temp = value8 = (byte)(value8 >> 1);
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.ZP_RMW_ROR:
+					WriteMemory(opcode2, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
+					FlagC = (temp8 & 1) != 0;
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.ZP_RMW_ROL:
+					WriteMemory(opcode2, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
+					FlagC = (temp8 & 0x80) != 0;
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.ZP_RMW_SLO:
+					WriteMemory(opcode2, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 0x80) != 0;
+					alu_temp = value8 = (byte)((value8 << 1));
+					A |= value8;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.ZP_RMW_ISC:
+					WriteMemory(opcode2, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)(value8 + 1);
+					value8 = (byte)alu_temp;
+					tempint = A - value8 - (FlagC ? 0 : 1);
+					if (FlagD && BCD_Enabled)
+					{
+						lo = (A & 0x0F) - (value8 & 0x0F) - (FlagC ? 0 : 1);
+						hi = (A & 0xF0) - (value8 & 0xF0);
+						if ((lo & 0xF0) != 0) lo -= 0x06;
+						if ((lo & 0x80) != 0) hi -= 0x10;
+						if ((hi & 0x0F00) != 0) hi -= 0x60;
+						FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = (hi & 0xFF00) == 0;
+						A = (byte)((lo & 0x0F) | (hi & 0xF0));
+					}
+					else
+					{
+						FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = tempint >= 0;
+						A = (byte)tempint;
+					}
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.ZP_RMW_RLA:
+					WriteMemory(opcode2, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
+					FlagC = (temp8 & 0x80) != 0;
+					A &= value8;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.AbsIdx_Stage3_Y:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						opcode3 = ReadMemory(PC++);
+						alu_temp = opcode2 + Y;
+						ea = (opcode3 << 8) + (alu_temp & 0xFF);
+
+						//new Uop[] { Uop.Fetch2, Uop.AbsIdx_Stage3_Y, Uop.AbsIdx_Stage4, Uop.AbsIdx_WRITE_Stage5_STA, Uop.End },
+					}
+					break;
+				case Uop.AbsIdx_Stage3_X:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						opcode3 = ReadMemory(PC++);
+						alu_temp = opcode2 + X;
+						ea = (opcode3 << 8) + (alu_temp & 0xFF);
+					}
+					break;
+				case Uop.AbsIdx_READ_Stage4:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						if (!alu_temp.Bit(8))
+						{
+							mi++;
+							ExecuteOneRetry();
+							return;
+						}
+						else
+						{
+							alu_temp = ReadMemory((ushort)ea);
+							ea = (ushort)(ea + 0x100);
+						}
+					}
+					break;
+				case Uop.AbsIdx_Stage4:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						//bleh.. redundant code to make sure we dont clobber alu_temp before using it to decide whether to change ea
+						if (alu_temp.Bit(8))
+						{
+							alu_temp = ReadMemory((ushort)ea);
+							ea = (ushort)(ea + 0x100);
+						}
+						else alu_temp = ReadMemory((ushort)ea);
+					}
+					break;
+				case Uop.AbsIdx_WRITE_Stage5_STA:
+					WriteMemory((ushort)ea, A);
+					break;
+				case Uop.AbsIdx_WRITE_Stage5_SHY:
+					alu_temp = Y & (ea >> 8);
+					ea = (ea & 0xFF) | (alu_temp << 8); //"(the bank where the value is stored may be equal to the value stored)" -- more like IS.
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					break;
+				case Uop.AbsIdx_WRITE_Stage5_SHX:
+					alu_temp = X & (ea >> 8);
+					ea = (ea & 0xFF) | (alu_temp << 8); //"(the bank where the value is stored may be equal to the value stored)" -- more like IS.
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					break;
+				case Uop.AbsIdx_WRITE_Stage5_ERROR:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						//throw new InvalidOperationException("UNSUPPORTED OPCODE [probably SHS] PLEASE REPORT");
+					}
+					break;
+				case Uop.AbsIdx_RMW_Stage5:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+					}
+					break;
+				case Uop.AbsIdx_RMW_Stage7:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					break;
+				case Uop.AbsIdx_RMW_Stage6_DEC:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					alu_temp = value8 = (byte)(alu_temp - 1);
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.AbsIdx_RMW_Stage6_DCP:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					alu_temp = value8 = (byte)(alu_temp - 1);
+					value8 = (byte)alu_temp;
+					value16 = (ushort)(A - value8);
+					FlagC = (A >= value8);
+					P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					break;
+				case Uop.AbsIdx_RMW_Stage6_ISC:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					alu_temp = value8 = (byte)(alu_temp + 1);
+					value8 = (byte)alu_temp;
+					tempint = A - value8 - (FlagC ? 0 : 1);
+					if (FlagD && BCD_Enabled)
+					{
+						lo = (A & 0x0F) - (value8 & 0x0F) - (FlagC ? 0 : 1);
+						hi = (A & 0xF0) - (value8 & 0xF0);
+						if ((lo & 0xF0) != 0) lo -= 0x06;
+						if ((lo & 0x80) != 0) hi -= 0x10;
+						if ((hi & 0x0F00) != 0) hi -= 0x60;
+						FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = (hi & 0xFF00) == 0;
+						A = (byte)((lo & 0x0F) | (hi & 0xF0));
+					}
+					else
+					{
+						FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = tempint >= 0;
+						A = (byte)tempint;
+					}
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.AbsIdx_RMW_Stage6_INC:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					alu_temp = value8 = (byte)(alu_temp + 1);
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.AbsIdx_RMW_Stage6_ROL:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
+					FlagC = (temp8 & 0x80) != 0;
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.AbsIdx_RMW_Stage6_LSR:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 1) != 0;
+					alu_temp = value8 = (byte)(value8 >> 1);
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.AbsIdx_RMW_Stage6_SLO:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 0x80) != 0;
+					alu_temp = value8 = (byte)(value8 << 1);
+					A |= value8;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.AbsIdx_RMW_Stage6_SRE:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 1) != 0;
+					alu_temp = value8 = (byte)(value8 >> 1);
+					A ^= value8;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.AbsIdx_RMW_Stage6_RRA:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
+					FlagC = (temp8 & 1) != 0;
+					//TODO - an extra cycle penalty?
+					value8 = (byte)alu_temp;
+					if (FlagD && BCD_Enabled)
+					{
+						lo = (A & 0x0F) + (value8 & 0x0F) + (FlagC ? 1 : 0);
+						hi = (A & 0xF0) + (value8 & 0xF0);
+						if (lo > 0x09)
+						{
+							hi += 0x10;
+							lo += 0x06;
+						}
+						if (hi > 0x90) hi += 0x60;
+						FlagV = (~(A ^ value8) & (A ^ hi) & 0x80) != 0;
+						FlagC = hi > 0xFF;
+						A = (byte)((lo & 0x0F) | (hi & 0xF0));
+					}
+					else
+					{
+						tempint = value8 + A + (FlagC ? 1 : 0);
+						FlagV = (~(A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = tempint > 0xFF;
+						A = (byte)tempint;
+					}
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.AbsIdx_RMW_Stage6_RLA:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
+					FlagC = (temp8 & 0x80) != 0;
+					A &= value8;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.AbsIdx_RMW_Stage6_ASL:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 0x80) != 0;
+					alu_temp = value8 = (byte)(value8 << 1);
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.AbsIdx_RMW_Stage6_ROR:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
+					FlagC = (temp8 & 1) != 0;
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.AbsIdx_READ_Stage5_LDA:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						A = ReadMemory((ushort)ea);
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.AbsIdx_READ_Stage5_LDX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						X = ReadMemory((ushort)ea);
+						P = (byte)((P & 0x7D) | TableNZ[X]);
+					}
+					break;
+				case Uop.AbsIdx_READ_Stage5_LAX:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						A = ReadMemory((ushort)ea);
+						X = A;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.AbsIdx_READ_Stage5_LDY:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						Y = ReadMemory((ushort)ea);
+
+						P = (byte)((P & 0x7D) | TableNZ[Y]);
+
+					}
+					break;
+				case Uop.AbsIdx_READ_Stage5_ORA:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						A |= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.AbsIdx_READ_Stage5_NOP:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+					}
+					break;
+				case Uop.AbsIdx_READ_Stage5_CMP:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						value8 = (byte)alu_temp;
+						value16 = (ushort)(A - value8);
+						FlagC = (A >= value8);
+						P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					}
+					break;
+				case Uop.AbsIdx_READ_Stage5_SBC:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						value8 = (byte)alu_temp;
+						tempint = A - value8 - (FlagC ? 0 : 1);
+						if (FlagD && BCD_Enabled)
+						{
+							lo = (A & 0x0F) - (value8 & 0x0F) - (FlagC ? 0 : 1);
+							hi = (A & 0xF0) - (value8 & 0xF0);
+							if ((lo & 0xF0) != 0) lo -= 0x06;
+							if ((lo & 0x80) != 0) hi -= 0x10;
+							if ((hi & 0x0F00) != 0) hi -= 0x60;
+							FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = (hi & 0xFF00) == 0;
+							A = (byte)((lo & 0x0F) | (hi & 0xF0));
+						}
+						else
+						{
+							FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = tempint >= 0;
+							A = (byte)tempint;
+						}
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.AbsIdx_READ_Stage5_ADC:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						//TODO - an extra cycle penalty?
+						value8 = (byte)alu_temp;
+						if (FlagD && BCD_Enabled)
+						{
+							lo = (A & 0x0F) + (value8 & 0x0F) + (FlagC ? 1 : 0);
+							hi = (A & 0xF0) + (value8 & 0xF0);
+							if (lo > 0x09)
+							{
+								hi += 0x10;
+								lo += 0x06;
+							}
+							if (hi > 0x90) hi += 0x60;
+							FlagV = (~(A ^ value8) & (A ^ hi) & 0x80) != 0;
+							FlagC = hi > 0xFF;
+							A = (byte)((lo & 0x0F) | (hi & 0xF0));
+						}
+						else
+						{
+							tempint = value8 + A + (FlagC ? 1 : 0);
+							FlagV = (~(A ^ value8) & (A ^ tempint) & 0x80) != 0;
+							FlagC = tempint > 0xFF;
+							A = (byte)tempint;
+						}
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.AbsIdx_READ_Stage5_EOR:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						A ^= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.AbsIdx_READ_Stage5_AND:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						A &= (byte)alu_temp;
+						P = (byte)((P & 0x7D) | TableNZ[A]);
+					}
+					break;
+				case Uop.AbsIdx_READ_Stage5_ERROR:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						alu_temp = ReadMemory((ushort)ea);
+						//throw new InvalidOperationException("UNSUPPORTED OPCODE [probably LAS] PLEASE REPORT");
+					}
+					break;
+				case Uop.AbsInd_JMP_Stage4:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						ea = (opcode3 << 8) + opcode2;
+						alu_temp = ReadMemory((ushort)ea);
+					}
+					break;
+				case Uop.AbsInd_JMP_Stage5:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						ea = (opcode3 << 8) + (byte)(opcode2 + 1);
+						alu_temp += ReadMemory((ushort)ea) << 8;
+						PC = (ushort)alu_temp;
+					}
+					break;
+				case Uop.Abs_RMW_Stage4:
+					rdy_freeze = !RDY;
+					if (RDY)
+					{
+						ea = (opcode3 << 8) + opcode2;
+						alu_temp = ReadMemory((ushort)ea);
+					}
+					break;
+				case Uop.Abs_RMW_Stage5_INC:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)(alu_temp + 1);
+					alu_temp = value8;
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.Abs_RMW_Stage5_DEC:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)(alu_temp - 1);
+					alu_temp = value8;
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.Abs_RMW_Stage5_DCP:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)(alu_temp - 1);
+					alu_temp = value8;
+					value8 = (byte)alu_temp;
+					value16 = (ushort)(A - value8);
+					FlagC = (A >= value8);
+					P = (byte)((P & 0x7D) | TableNZ[(byte)value16]);
+					break;
+				case Uop.Abs_RMW_Stage5_ISC:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)(alu_temp + 1);
+					alu_temp = value8;
+					value8 = (byte)alu_temp;
+					tempint = A - value8 - (FlagC ? 0 : 1);
+					if (FlagD && BCD_Enabled)
+					{
+						lo = (A & 0x0F) - (value8 & 0x0F) - (FlagC ? 0 : 1);
+						hi = (A & 0xF0) - (value8 & 0xF0);
+						if ((lo & 0xF0) != 0) lo -= 0x06;
+						if ((lo & 0x80) != 0) hi -= 0x10;
+						if ((hi & 0x0F00) != 0) hi -= 0x60;
+						FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = (hi & 0xFF00) == 0;
+						A = (byte)((lo & 0x0F) | (hi & 0xF0));
+					}
+					else
+					{
+						FlagV = ((A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = tempint >= 0;
+						A = (byte)tempint;
+					}
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.Abs_RMW_Stage5_ASL:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 0x80) != 0;
+					alu_temp = value8 = (byte)(value8 << 1);
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.Abs_RMW_Stage5_ROR:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
+					FlagC = (temp8 & 1) != 0;
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.Abs_RMW_Stage5_SLO:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 0x80) != 0;
+					alu_temp = value8 = (byte)(value8 << 1);
+					A |= value8;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.Abs_RMW_Stage5_RLA:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
+					FlagC = (temp8 & 0x80) != 0;
+					A &= value8;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.Abs_RMW_Stage5_SRE:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 1) != 0;
+					alu_temp = value8 = (byte)(value8 >> 1);
+					A ^= value8;
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.Abs_RMW_Stage5_RRA:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 >> 1) | ((P & 1) << 7));
+					FlagC = (temp8 & 1) != 0;
+					//TODO - an extra cycle penalty?
+					value8 = (byte)alu_temp;
+					if (FlagD && BCD_Enabled)
+					{
+						lo = (A & 0x0F) + (value8 & 0x0F) + (FlagC ? 1 : 0);
+						hi = (A & 0xF0) + (value8 & 0xF0);
+						if (lo > 0x09)
+						{
+							hi += 0x10;
+							lo += 0x06;
+						}
+						if (hi > 0x90) hi += 0x60;
+						FlagV = (~(A ^ value8) & (A ^ hi) & 0x80) != 0;
+						FlagC = hi > 0xFF;
+						A = (byte)((lo & 0x0F) | (hi & 0xF0));
+					}
+					else
+					{
+						tempint = value8 + A + (FlagC ? 1 : 0);
+						FlagV = (~(A ^ value8) & (A ^ tempint) & 0x80) != 0;
+						FlagC = tempint > 0xFF;
+						A = (byte)tempint;
+					}
+					P = (byte)((P & 0x7D) | TableNZ[A]);
+					break;
+				case Uop.Abs_RMW_Stage5_ROL:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = temp8 = (byte)alu_temp;
+					alu_temp = value8 = (byte)((value8 << 1) | (P & 1));
+					FlagC = (temp8 & 0x80) != 0;
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.Abs_RMW_Stage5_LSR:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					value8 = (byte)alu_temp;
+					FlagC = (value8 & 1) != 0;
+					alu_temp = value8 = (byte)(value8 >> 1);
+					P = (byte)((P & 0x7D) | TableNZ[value8]);
+					break;
+				case Uop.Abs_RMW_Stage6:
+					WriteMemory((ushort)ea, (byte)alu_temp);
+					break;
+				case Uop.End_ISpecial:
+					opcode = VOP_Fetch1;
+					mi = 0;
+					ExecuteOneRetry();
+					return;
+					//break;
+				case Uop.End_SuppressInterrupt:
+					opcode = VOP_Fetch1_NoInterrupt;
+					mi = 0;
+					ExecuteOneRetry();
+					return;
+					//break;
+				case Uop.End:
+					opcode = VOP_Fetch1;
+					mi = 0;
+					iflag_pending = FlagI;
+					ExecuteOneRetry();
+					return;
+					//break;
+				case Uop.End_BranchSpecial:
+					opcode = VOP_Fetch1;
+					mi = 0;
+					iflag_pending = FlagI;
+					ExecuteOneRetry();
+					break;
+				case Uop.Jam:
+					rdy_freeze = true;
+					break;
 			}
 		}
 
