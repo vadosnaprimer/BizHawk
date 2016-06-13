@@ -9,7 +9,6 @@ namespace BizHawk.Emulation.Cores.Atari.Atari2600
 
 		public byte DDRa = 0x00;
 		public byte DDRb = 0x00;
-        public byte outputA = 0x00;
 
 		public TimerData Timer;
 
@@ -36,13 +35,9 @@ namespace BizHawk.Emulation.Cores.Atari.Atari2600
 			{
 				// Read Output reg A
 				// Combine readings from player 1 and player 2
-                // actually depends on setting in SWCHCNTA (aka DDRa)
-
-                var temp = (byte)(_core.ReadControls1(peek) & 0xF0 | ((_core.ReadControls2(peek) >> 4) & 0x0F));
-                temp = (byte)(temp & ~DDRa);
-                temp = (byte)(temp + (outputA & DDRa));
-                return temp;
-				
+				var temp = (byte)(_core.ReadControls1(peek) & 0xF0 | ((_core.ReadControls2(peek) >> 4) & 0x0F));
+				temp = (byte)(temp & ~DDRa);
+				return temp;
 			}
 			
 			if (registerAddr == 0x01)
@@ -154,8 +149,7 @@ namespace BizHawk.Emulation.Cores.Atari.Atari2600
 
 					if (registerAddr == 0x00)
 					{
-                        // Write Output reg A
-                        outputA = value;
+						// Write Output reg A
 					}
 					else if (registerAddr == 0x01)
 					{
@@ -164,8 +158,7 @@ namespace BizHawk.Emulation.Cores.Atari.Atari2600
 					}
 					else if (registerAddr == 0x02)
 					{
-                        // Write Output reg B
-                        // But is read only
+						// Write Output reg B
 					}
 					else if (registerAddr == 0x03)
 					{
@@ -181,8 +174,7 @@ namespace BizHawk.Emulation.Cores.Atari.Atari2600
 			ser.BeginSection("M6532");
 			ser.Sync("ddra", ref DDRa);
 			ser.Sync("ddrb", ref DDRb);
-            ser.Sync("OutputA", ref outputA);
-            Timer.SyncState(ser);
+			Timer.SyncState(ser);
 			ser.EndSection();
 		}
 
