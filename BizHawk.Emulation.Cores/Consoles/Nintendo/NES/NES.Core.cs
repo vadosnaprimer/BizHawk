@@ -151,6 +151,8 @@ namespace BizHawk.Emulation.Cores.Nintendo.NES
 		public void HardReset()
 		{
 			cpu = new MOS6502X();
+			RegisterReadDelegates();
+			RegisterWriteDelegates();
 			cpu.SetCallbacks(ReadMemory, ReadMemory, PeekMemory, WriteMemory);
 
 			cpu.BCD_Enabled = false;
@@ -659,38 +661,91 @@ namespace BizHawk.Emulation.Cores.Nintendo.NES
 			MemoryCallbacks.CallExecutes(addr);
 		}
 
+		private delegate byte ReadMemoryDelegate(ushort addr);
+
+		public byte ReadROM(ushort addr)
+		{
+			return Board.ReadPRG(addr - 0x8000);
+		}
+
+		public byte ReadRAM(ushort addr)
+		{
+			return ram[addr];
+		}
+
+		public byte ReadRAMMirrors(ushort addr)
+		{
+			return ram[addr & 0x7FF];
+		}
+
+		public byte ReadReg2xxx(ushort addr)
+		{
+			return Board.ReadReg2xxx(addr);
+		}
+
+		public byte ReadRegs(ushort addr)
+		{
+			return ReadReg(addr);
+		}
+
+		public byte ReadEXP(ushort addr)
+		{
+			return Board.ReadEXP(addr - 0x4000);
+		}
+
+		public byte ReadWRAM(ushort addr)
+		{
+			return Board.ReadWRAM(addr - 0x6000);
+		}
+
+		ReadMemoryDelegate[] ReadDelegates = new ReadMemoryDelegate[0x10000];
+
+		private void RegisterReadDelegates()
+		{
+			ReadMemoryDelegate ReadROMDelegate = new ReadMemoryDelegate(ReadROM);
+			ReadMemoryDelegate ReadRAMDelegate = new ReadMemoryDelegate(ReadRAM);
+			ReadMemoryDelegate ReadRAMMirrorsDelegate = new ReadMemoryDelegate(ReadRAMMirrors);
+			ReadMemoryDelegate ReadReg2xxxDelegate = new ReadMemoryDelegate(ReadReg2xxx);
+			ReadMemoryDelegate ReadRegsDelegate = new ReadMemoryDelegate(ReadRegs);
+			ReadMemoryDelegate ReadEXPDelegate = new ReadMemoryDelegate(ReadEXP);
+			ReadMemoryDelegate ReadWRAMDelegate = new ReadMemoryDelegate(ReadWRAM);
+
+			for (int addr = 0; addr < 0x10000; addr++)
+			{
+				if (addr >= 0x8000)
+				{
+					ReadDelegates[addr] = ReadROMDelegate;
+				}
+				else if (addr < 0x0800)
+				{
+					ReadDelegates[addr] = ReadRAMDelegate;
+				}
+				else if (addr < 0x2000)
+				{
+					ReadDelegates[addr] = ReadRAMMirrorsDelegate;
+				}
+				else if (addr < 0x4000)
+				{
+					ReadDelegates[addr] = ReadReg2xxxDelegate;
+				}
+				else if (addr < 0x4020)
+				{
+					ReadDelegates[addr] = ReadRegsDelegate;		
+				}
+				else if (addr < 0x6000)
+				{
+					ReadDelegates[addr] = ReadEXPDelegate;
+				}
+				else
+				{
+					ReadDelegates[addr] = ReadWRAMDelegate;
+				}
+			}
+		}
+
 		public byte ReadMemory(ushort addr)
 		{
-			byte ret;
-			
-			if (addr >= 0x8000)
-			{
-				ret = Board.ReadPRG(addr - 0x8000); //easy optimization, since rom reads are so common, move this up (reordering the rest of these elseifs is not easy)
-			}
-			else if (addr < 0x0800)
-			{
-				ret = ram[addr];
-			}
-			else if (addr < 0x2000)
-			{
-				ret = ram[addr & 0x7FF];
-			}
-			else if (addr < 0x4000)
-			{
-				ret = Board.ReadReg2xxx(addr);
-			}
-			else if (addr < 0x4020)
-			{
-				ret = ReadReg(addr); //we're not rebasing the register just to keep register names canonical			
-			}
-			else if (addr < 0x6000)
-			{
-				ret = Board.ReadEXP(addr - 0x4000);
-			}
-			else
-			{
-				ret = Board.ReadWRAM(addr - 0x6000);
-			}
+			byte ret = ReadDelegates[addr](addr);
 			
 			//handle breakpoints and stuff.
 			//the idea is that each core can implement its own watch class on an address which will track all the different kinds of monitors and breakpoints and etc.
@@ -723,36 +778,91 @@ namespace BizHawk.Emulation.Cores.Nintendo.NES
 			}
 		}
 
+		public delegate void WriteMemoryDelegate(ushort addr, byte value);
+
+		public void WriteROM(ushort addr, byte value)
+		{
+			Board.WritePRG(addr - 0x8000, value);
+		}
+
+		public void WriteRAM(ushort addr, byte value)
+		{
+			ram[addr] = value;
+		}
+
+		public void WriteRAMMirrors(ushort addr, byte value)
+		{
+			ram[addr & 0x7FF] = value;
+		}
+
+		public void WriteReg2xxx(ushort addr, byte value)
+		{
+			Board.WriteReg2xxx(addr, value);
+		}
+
+		public void WriteRegs(ushort addr, byte value)
+		{
+			WriteReg(addr, value);
+		}
+
+		public void WriteEXP(ushort addr, byte value)
+		{
+			Board.WriteEXP(addr - 0x4000, value);
+		}
+
+		public void WriteWRAM(ushort addr, byte value)
+		{
+			Board.WriteWRAM(addr - 0x6000, value);
+		}
+
+		WriteMemoryDelegate[] WriteDelegates = new WriteMemoryDelegate[0x10000];
+
+		private void RegisterWriteDelegates()
+		{
+			WriteMemoryDelegate WriteROMDelegate = new WriteMemoryDelegate(WriteROM);
+			WriteMemoryDelegate WriteRAMDelegate = new WriteMemoryDelegate(WriteRAM);
+			WriteMemoryDelegate WriteRAMMirrorsDelegate = new WriteMemoryDelegate(WriteRAMMirrors);
+			WriteMemoryDelegate WriteReg2xxxDelegate = new WriteMemoryDelegate(WriteReg2xxx);
+			WriteMemoryDelegate WriteRegsDelegate = new WriteMemoryDelegate(WriteRegs);
+			WriteMemoryDelegate WriteEXPDelegate = new WriteMemoryDelegate(WriteEXP);
+			WriteMemoryDelegate WriteWRAMDelegate = new WriteMemoryDelegate(WriteWRAM);
+
+			for (int addr = 0; addr < 0x10000; addr++)
+			{
+				if (addr >= 0x8000)
+				{
+					WriteDelegates[addr] = WriteROMDelegate;
+				}
+				else if (addr < 0x0800)
+				{
+					WriteDelegates[addr] = WriteRAMDelegate;
+				}
+				else if (addr < 0x2000)
+				{
+					WriteDelegates[addr] = WriteRAMMirrorsDelegate;
+				}
+				else if (addr < 0x4000)
+				{
+					WriteDelegates[addr] = WriteReg2xxxDelegate;
+				}
+				else if (addr < 0x4020)
+				{
+					WriteDelegates[addr] = WriteRegsDelegate;
+				}
+				else if (addr < 0x6000)
+				{
+					WriteDelegates[addr] = WriteEXPDelegate;
+				}
+				else
+				{
+					WriteDelegates[addr] = WriteWRAMDelegate;
+				}
+			}
+		}
+
 		public void WriteMemory(ushort addr, byte value)
 		{
-			if (addr < 0x0800)
-			{
-				ram[addr] = value;
-			}
-			else if (addr < 0x2000)
-			{
-				ram[addr & 0x7FF] = value;
-			}
-			else if (addr < 0x4000)
-			{
-				Board.WriteReg2xxx(addr,value);
-			}
-			else if (addr < 0x4020)
-			{
-				WriteReg(addr, value);  //we're not rebasing the register just to keep register names canonical
-			}
-			else if (addr < 0x6000)
-			{
-				Board.WriteEXP(addr - 0x4000, value);
-			}
-			else if (addr < 0x8000)
-			{
-				Board.WriteWRAM(addr - 0x6000, value);
-			}
-			else
-			{
-				Board.WritePRG(addr - 0x8000, value);
-			}
+			WriteDelegates[addr](addr, value);
 
 			MemoryCallbacks.CallWrites(addr);
 		}
