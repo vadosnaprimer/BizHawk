@@ -2,7 +2,6 @@
 
 using BizHawk.Emulation.Common;
 using BizHawk.Client.Common.InputAdapterExtensions;
-
 namespace BizHawk.Client.Common
 {
 	public static class InputManager

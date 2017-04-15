@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -9,7 +10,7 @@ namespace BizHawk.Client.Common
 	public class LuaDocumentation : List<LibraryFunction>
 	{
 		public LuaDocumentation()
-			: base() { }
+			:base() { }
 
 		public string ToTASVideosWikiMarkup()
 		{
@@ -113,7 +114,7 @@ __Types and notation__
 				if (f.ParameterList.Any())
 				{
 					sb
-						.Append($"{f.Library}.{f.Name}(");
+						.Append(string.Format("{0}.{1}(", f.Library, f.Name));
 
 					var parameters = f.Method.GetParameters()
 						.ToList();
@@ -127,7 +128,7 @@ __Types and notation__
 
 						if (parameters[i].IsOptional)
 						{
-							sb.Append($"[{parameters[i].Name}]");
+							sb.Append(string.Format("[{0}]", parameters[i].Name));
 						}
 						else
 						{
@@ -146,7 +147,7 @@ __Types and notation__
 				}
 				else
 				{
-					sb.Append($"{f.Library}.{f.Name}()");
+					sb.Append(string.Format("{0}.{1}()", f.Library, f.Name));
 				}
 
 				completion.Contents = sb.ToString();
@@ -177,16 +178,22 @@ __Types and notation__
 			LibraryDescription = libraryDescription;
 		}
 
-		public string Library { get; }
-		public string LibraryDescription { get; }
+		public string Library { get; private set; }
+		public string LibraryDescription { get; private set; }
 
-		public MethodInfo Method => _method;
+		public MethodInfo Method {  get { return _method; } }
 
-	    public string Name => _luaAttributes.Name;
+		public string Name
+		{
+			get { return _luaAttributes.Name; }
+		}
 
-	    public string Description => _luaAttributes.Description;
+		public string Description
+		{
+			get { return _luaAttributes.Description; }
+		}
 
-	    private string _paramterList = null;
+		private string _paramterList = null;
 
 		public string ParameterList
 		{

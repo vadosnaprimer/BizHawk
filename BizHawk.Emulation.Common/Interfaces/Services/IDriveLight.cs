@@ -7,12 +7,12 @@
 	public interface IDriveLight : IEmulatorService
 	{
 		/// <summary>
-		/// Gets a value indicating whether there is currently a Drive light available
+		/// Specifies whether there is currently a Drive light available
 		/// </summary>
 		bool DriveLightEnabled { get; }
 
 		/// <summary>
-		/// Gets a value indicating whether the light is currently lit
+		/// Specifies whether the light is currently lit
 		/// </summary>
 		bool DriveLightOn { get; }
 	}

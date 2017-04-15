@@ -62,7 +62,10 @@ namespace BizHawk.Emulation.Common
 		{
 			if ((hadAny && !hasAny) || (!hadAny && hasAny))
 			{
-			    ActiveChanged?.Invoke();
+				if (ActiveChanged != null)
+				{
+					ActiveChanged();
+				}
 			}
 		}
 	}

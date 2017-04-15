@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Text;
 
 using BizHawk.Common;
 
@@ -13,16 +16,10 @@ namespace BizHawk.Client.Common
 		public static IStringLog MakeStringLog()
 		{
 			if (DefaultToDisk)
-			{
 				return new StreamStringLog(true);
-			}
-
-			if (DefaultToAWE)
-			{
+			else if(DefaultToAWE)
 				return new StreamStringLog(false);
-			}
-
-			return new ListStringLog();
+			else return new ListStringLog();
 		}
 	}
 
@@ -81,19 +78,15 @@ namespace BizHawk.Client.Common
 			{
 				stream = new AWEMemoryStream();
 			}
-
 			bw = new BinaryWriter(stream);
 			br = new BinaryReader(stream);
 		}
 
 		public IStringLog Clone()
 		{
-			StreamStringLog ret = new StreamStringLog(mDisk); // doesnt necessarily make sense to copy the mDisk value, they could be designated for different targets...
+			StreamStringLog ret = new StreamStringLog(mDisk); //doesnt necessarily make sense to copy the mDisk value, they could be designated for different targets...
 			for (int i = 0; i < Count; i++)
-			{
 				ret.Add(this[i]);
-			}
-
 			return ret;
 		}
 
@@ -102,9 +95,9 @@ namespace BizHawk.Client.Common
 			stream.Dispose();
 		}
 
-		public int Count => Offsets.Count;
+		public int Count { get { return Offsets.Count; } }
 
-	    public void Clear()
+		public void Clear()
 		{
 			stream.SetLength(0);
 			Offsets.Clear();
@@ -121,8 +114,8 @@ namespace BizHawk.Client.Common
 
 		public void RemoveAt(int index)
 		{
-			// no garbage collection in the disk file... oh well.
 			Offsets.RemoveAt(index);
+			//no garbage collection in the disk file... oh well.
 		}
 
 		public string this[int index]
@@ -151,18 +144,14 @@ namespace BizHawk.Client.Common
 
 		public void InsertRange(int index, IEnumerable<string> collection)
 		{
-			foreach (var item in collection)
-			{
+			foreach(var item in collection)
 				Insert(index++,item);
-			}
 		}
 
 		public void AddRange(IEnumerable<string> collection)
 		{
 			foreach (var item in collection)
-			{
 				Add(item);
-			}
 		}
 
 		class Enumerator : IEnumerator<string>
@@ -188,12 +177,12 @@ namespace BizHawk.Client.Common
 
 		IEnumerator<string> IEnumerable<string>.GetEnumerator()
 		{
-			return new Enumerator { log = this };
+			return new Enumerator() { log = this };
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
 		{
-			return new Enumerator { log = this };
+			return new Enumerator() { log = this };
 		}
 
 		public void RemoveRange(int index, int count)
@@ -209,17 +198,13 @@ namespace BizHawk.Client.Common
 		public void CopyTo(string[] array)
 		{
 			for (int i = 0; i < Count; i++)
-			{
 				array[i] = this[i];
-			}
 		}
 
 		public void CopyTo(int index, string[] array, int arrayIndex, int count)
 		{
 			for (int i = 0; i < count; i++)
-			{
 				array[i + arrayIndex] = this[index + i];
-			}
 		}
 	}
 }

@@ -9,9 +9,7 @@ namespace BizHawk.Emulation.Common
 	/// By Convention it should also throw a NotImplementedException
 	/// Any feature that does not have this attribute is assumed to be implemented
 	/// </summary>
-	public class FeatureNotImplemented : Attribute
-	{
-	}
+	public class FeatureNotImplemented : Attribute { }
 
 	/// <summary>
 	/// Should be added to any implementation of IEmulator to document any
@@ -25,7 +23,14 @@ namespace BizHawk.Emulation.Common
 	{
 		public ServiceNotApplicable(params Type[] types)
 		{
-		    NotApplicableTypes = types?.ToList() ?? new List<Type>();
+			if (types != null)
+			{
+				NotApplicableTypes = types.ToList();
+			}
+			else
+			{
+				NotApplicableTypes = new List<Type>();
+			}
 		}
 
 		public IEnumerable<Type> NotApplicableTypes { get; private set; }

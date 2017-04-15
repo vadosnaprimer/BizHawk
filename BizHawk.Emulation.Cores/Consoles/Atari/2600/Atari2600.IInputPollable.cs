@@ -16,7 +16,7 @@ namespace BizHawk.Emulation.Cores.Atari.Atari2600
 			set { _islag = value; }
 		}
 
-		public IInputCallbackSystem InputCallbacks { get; } = new InputCallbackSystem();
+		public IInputCallbackSystem InputCallbacks { get; private set; }
 
 		private bool _islag = true;
 		private int _lagcount;

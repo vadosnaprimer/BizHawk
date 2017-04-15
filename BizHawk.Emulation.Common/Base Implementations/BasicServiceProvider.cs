@@ -22,7 +22,9 @@ namespace BizHawk.Emulation.Common
 			// this removes the possibility of automagically picking up a service in a nested class, (find the type, then
 			// find the field), but we're going to keep such logic out of the basic provider.  anything the passed
 			// core doesn't implement directly needs to be added with Register()
+
 			// this also fully allows services that are not IEmulatorService
+
 			Type coreType = core.GetType();
 
 			var services = coreType.GetInterfaces()
@@ -46,12 +48,14 @@ namespace BizHawk.Emulation.Common
 		/// <summary>
 		/// the core can call this to register an additional service
 		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="provider"></param>
 		public void Register<T>(T provider) 
 			where T : IEmulatorService
 		{
 			if (provider == null)
 			{
-				throw new ArgumentNullException(nameof(provider));
+				throw new ArgumentNullException("provider");
 			}
 
 			Services[typeof(T)] = provider;

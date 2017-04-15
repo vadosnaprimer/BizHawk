@@ -30,9 +30,9 @@ namespace BizHawk.Client.Common
 		public EventLuaLibrary(Lua lua, Action<string> logOutputCallback)
 			: base(lua, logOutputCallback) { }
 
-		public override string Name => "event";
+		public override string Name { get { return "event"; } }
 
-	    #region Events Library Helpers
+		#region Events Library Helpers
 
 		public void CallExitEvent(Lua thread)
 		{
@@ -202,9 +202,11 @@ namespace BizHawk.Client.Common
 					return Guid.Empty.ToString();
 				}
 			}
-
-			LogNotImplemented();
-			return Guid.Empty.ToString();
+			else
+			{
+				LogNotImplemented();
+				return Guid.Empty.ToString();
+			}
 		}
 
 		private void LogNotImplemented()
@@ -235,9 +237,7 @@ namespace BizHawk.Client.Common
 					DebuggableCore.MemoryCallbacks.ExecuteCallbacksAvailable)
 				{
 					if (N64CoreTypeDynarec())
-					{
 						return Guid.Empty.ToString();
-					}
 
 					var nlf = new NamedLuaFunction(luaf, "OnMemoryExecute", LogOutputCallback, CurrentThread, name);
 					_luaFunctions.Add(nlf);
@@ -247,7 +247,7 @@ namespace BizHawk.Client.Common
 					return nlf.Guid.ToString();
 				}
 			}
-			catch (NotImplementedException)
+			catch(NotImplementedException)
 			{
 				LogMemoryExecuteCallbacksNotImplemented();
 				return Guid.Empty.ToString();
@@ -268,9 +268,7 @@ namespace BizHawk.Client.Common
 				if (DebuggableCore != null && DebuggableCore.MemoryCallbacksAvailable())
 				{
 					if (N64CoreTypeDynarec())
-					{
 						return Guid.Empty.ToString();
-					}
 
 					var nlf = new NamedLuaFunction(luaf, "OnMemoryRead", LogOutputCallback, CurrentThread, name);
 					_luaFunctions.Add(nlf);
@@ -301,9 +299,7 @@ namespace BizHawk.Client.Common
 				if (DebuggableCore != null && DebuggableCore.MemoryCallbacksAvailable())
 				{
 					if (N64CoreTypeDynarec())
-					{
 						return Guid.Empty.ToString();
-					}
 
 					var nlf = new NamedLuaFunction(luaf, "OnMemoryWrite", LogOutputCallback, CurrentThread, name);
 					_luaFunctions.Add(nlf);

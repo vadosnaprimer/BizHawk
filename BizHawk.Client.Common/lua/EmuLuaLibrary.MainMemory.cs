@@ -16,9 +16,9 @@ namespace BizHawk.Client.Common
 		public MainMemoryLuaLibrary(Lua lua, Action<string> logOutputCallback)
 			: base(lua, logOutputCallback) { }
 
-		public override string Name => "mainmemory";
+		public override string Name { get { return "mainmemory"; } }
 
-	    protected override MemoryDomain Domain
+		protected override MemoryDomain Domain
 		{
 			get
 			{
@@ -28,7 +28,7 @@ namespace BizHawk.Client.Common
 				}
 				else
 				{
-					var error = $"Error: {Emulator.Attributes().CoreName} does not implement memory domains";
+					var error = string.Format("Error: {0} does not implement memory domains", Emulator.Attributes().CoreName);
 					Log(error);
 					throw new NotImplementedException(error);
 				}

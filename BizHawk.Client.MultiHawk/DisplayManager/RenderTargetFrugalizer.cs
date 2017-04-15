@@ -7,7 +7,7 @@ using BizHawk.Client.Common;
 
 using BizHawk.Bizware.BizwareGL;
 
-namespace BizHawk.Client.EmuHawk
+namespace BizHawk.Client.MultiHawk
 {
 	/// <summary>
 	/// Recycles a pair of temporary render targets, as long as the dimensions match.

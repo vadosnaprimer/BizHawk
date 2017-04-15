@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 
 using BizHawk.Common;
@@ -23,7 +24,7 @@ namespace BizHawk.Emulation.Cores.Intellivision
 			}
 
 			Port1 = (IPort)Activator.CreateInstance(ValidControllerTypes[controller1Name], 1);
-			Port2 = (IPort)Activator.CreateInstance(ValidControllerTypes[controller2Name], 2);
+			Port2 = (IPort)Activator.CreateInstance(ValidControllerTypes[controller2Name], 2); ;
 
 			Definition = new ControllerDefinition
 			{
@@ -50,7 +51,7 @@ namespace BizHawk.Emulation.Cores.Intellivision
 			return Port2.Read(c);
 		}
 
-		public ControllerDefinition Definition { get; }
+		public ControllerDefinition Definition { get; private set; }
 
 		public void SyncState(Serializer ser)
 		{

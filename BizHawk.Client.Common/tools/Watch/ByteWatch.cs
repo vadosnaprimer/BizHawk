@@ -40,15 +40,14 @@ namespace BizHawk.Client.Common
 		{
 			if (value == 0)
 			{
-				_value = GetByte();
+				this._value = GetByte();
 			}
 			else
 			{
-				_value = value;
+				this._value = value;
 			}
-
-			_previous = previous;
-			_changecount = changeCount;
+			this._previous = previous;
+			this._changecount = changeCount;
 		}
 
 		#endregion
@@ -56,7 +55,7 @@ namespace BizHawk.Client.Common
 		#region Methods
 
 		/// <summary>
-		/// Enumerate which <see cref="DisplayType"/> are valid for a <see cref="ByteWatch"/>
+		/// Enumerate wich <see cref="DisplayType"/> are valid for a <see cref="ByteWatch"/>
 		/// </summary>
 		public static IEnumerable<DisplayType> ValidTypes
 		{
@@ -201,7 +200,7 @@ namespace BizHawk.Client.Common
 
 		#endregion Implements
 
-		// TODO: Implements IFormattable
+		//TODO: Implements IFormattable
 		public string FormatValue(byte val)
 		{
 			switch (Type)
@@ -243,41 +242,77 @@ namespace BizHawk.Client.Common
 					diff = "-";
 				}
 
-				return $"{diff}{FormatValue((byte)Math.Abs(diffVal))}";
+				return string.Format("{0}{1}", diff, FormatValue((byte)Math.Abs(diffVal)));
 			}
 		}
 
 		/// <summary>
 		/// Get the maximum possible value
 		/// </summary>
-		public override uint MaxValue => byte.MaxValue;
+		public override uint MaxValue
+		{
+			get
+			{
+				return byte.MaxValue;
+			}
+		}
 
-	    /// <summary>
+		/// <summary>
 		/// Get the current value
 		/// </summary>
-		public override int Value => GetByte();
+		public override int Value
+		{
+			get
+			{
+				return GetByte();
+			}
+		}
 
-	    /// <summary>
+		/// <summary>
 		/// Gets the current value
 		/// but with stuff I don't understand
 		/// </summary>
 		/// <remarks>zero 15-nov-2015 - bypass LIAR LOGIC, see fdc9ea2aa922876d20ba897fb76909bf75fa6c92 https://github.com/TASVideos/BizHawk/issues/326 </remarks>
-		public override int ValueNoFreeze => GetByte(true);
+		public override int ValueNoFreeze
+		{
+			get
+			{
+				return GetByte(true);
+			}
+		}
 
-	    /// <summary>
+		/// <summary>
 		/// Get a string representation of the current value
 		/// </summary>
-		public override string ValueString => FormatValue(GetByte());
+		public override string ValueString
+		{
+			get
+			{
+				return FormatValue(GetByte());
+			}
+		}
 
-	    /// <summary>
+		/// <summary>
 		/// Get the previous value
 		/// </summary>
-		public override int Previous => _previous;
+		public override int Previous
+		{
+			get
+			{
+				return _previous;
+			}
+		}
 
-	    /// <summary>
+		/// <summary>
 		/// Get a string representation of the previous value
 		/// </summary>
-		public override string PreviousStr => FormatValue(_previous);
+		public override string PreviousStr
+		{
+			get
+			{
+				return FormatValue(_previous);
+			}
+		}
 
 		#endregion Implements
 

@@ -39,10 +39,7 @@ namespace BizHawk.Emulation.Common
 			{
 				tmp[0] = source.GetService(propinfo.PropertyType);
 				if (tmp[0] == null)
-				{
 					return false;
-				}
-
 				propinfo.GetSetMethod(true).Invoke(target, tmp);
 			}
 
@@ -51,7 +48,6 @@ namespace BizHawk.Emulation.Common
 				tmp[0] = source.GetService(propinfo.PropertyType);
 				propinfo.GetSetMethod(true).Invoke(target, tmp);
 			}
-
 			return true;
 		}
 
@@ -63,7 +59,7 @@ namespace BizHawk.Emulation.Common
 		{
 			return targetType.GetPropertiesWithAttrib(typeof(RequiredService))
 				.Select(pi => pi.PropertyType)
-				.All(source.HasService);
+				.All(t => source.HasService(t));
 		}
 	}
 

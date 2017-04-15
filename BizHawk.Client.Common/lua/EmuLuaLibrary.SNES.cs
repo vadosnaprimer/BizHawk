@@ -18,9 +18,9 @@ namespace BizHawk.Client.Common
 		public SnesLuaLibrary(Lua lua, Action<string> logOutputCallback)
 			: base(lua, logOutputCallback) { }
 
-		public override string Name => "snes";
+		public override string Name { get { return "snes"; } }
 
-	    private LibsnesCore.SnesSettings GetSettings()
+		private LibsnesCore.SnesSettings GetSettings()
 		{
 			if (Snes != null)
 			{
@@ -32,7 +32,10 @@ namespace BizHawk.Client.Common
 
 		private void PutSettings(LibsnesCore.SnesSettings settings)
 		{
-			Snes?.PutSettings(settings);
+			if (Snes != null)
+			{
+				Snes.PutSettings(settings);
+			}
 		}
 
 		[LuaMethodAttributes(

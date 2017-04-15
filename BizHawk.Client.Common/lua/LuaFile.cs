@@ -1,4 +1,7 @@
-﻿namespace BizHawk.Client.Common
+﻿using System;
+using System.IO;
+
+namespace BizHawk.Client.Common
 {
 	public class LuaFile
 	{
@@ -30,8 +33,8 @@
 
 		public string Name { get; set; }
 		public string Path { get; set; }
-		public bool Enabled => State != RunState.Disabled;
-		public bool Paused => State == RunState.Paused;
+		public bool Enabled { get { return State != RunState.Disabled; } }
+		public bool Paused { get { return State == RunState.Paused; } }
 		public bool IsSeparator { get; set; }
 		public LuaInterface.Lua Thread { get; set; }
 		public bool FrameWaiting { get; set; }
@@ -44,9 +47,12 @@
 
 		public RunState State { get; set; }
 
-		public static LuaFile SeparatorInstance => new LuaFile(true);
+		public static LuaFile SeparatorInstance
+		{
+			get { return new LuaFile(true); }
+		}
 
-	    public void Stop()
+		public void Stop()
 		{
 			State = RunState.Disabled;
 			Thread = null;
@@ -72,13 +78,9 @@
 		public void TogglePause()
 		{
 			if (State == RunState.Paused)
-			{
 				State = RunState.Running;
-			}
-			else if (State == RunState.Running)
-			{
+			else if(State == RunState.Running)
 				State = RunState.Paused;
-			}
 		}
 	}
 }

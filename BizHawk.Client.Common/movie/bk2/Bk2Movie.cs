@@ -46,9 +46,8 @@ namespace BizHawk.Client.Common
 
 		public string Name { get; private set; }
 
-		public virtual string PreferredExtension => Extension;
-
-	    public const string Extension = "bk2";
+		public virtual string PreferredExtension { get { return Extension; } }
+		public const string Extension = "bk2";
 
 		public virtual bool Changes { get; protected set; }
 		public bool IsCountingRerecords { get; set; }
@@ -71,9 +70,12 @@ namespace BizHawk.Client.Common
 			}
 		}
 
-		public int InputLogLength => _log.Count;
+		public int InputLogLength
+		{
+			get { return _log.Count; }
+		}
 
-	    #region Log Editing
+		#region Log Editing
 
 		public void AppendFrame(IController source)
 		{
@@ -110,6 +112,8 @@ namespace BizHawk.Client.Common
 				{
 					_log.RemoveRange(frame, _log.Count - frame);
 					Changes = true;
+
+					
 				}
 			}
 		}
@@ -118,6 +122,7 @@ namespace BizHawk.Client.Common
 		{
 			if (frame < FrameCount && frame >= 0)
 			{
+
 				int getframe;
 
 				if (LoopOffset.HasValue)

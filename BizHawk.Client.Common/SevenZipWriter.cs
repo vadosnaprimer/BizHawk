@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.IO;
 using System.Threading.Tasks;
 using System.Threading;
@@ -24,8 +26,8 @@ namespace BizHawk.Client.Common
 			ManualResetEvent full = new ManualResetEvent(true);
 			ManualResetEvent empty = new ManualResetEvent(false);
 
-			public Stream W { get; }
-			public Stream R { get; }
+			public Stream W { get; private set; }
+			public Stream R { get; private set; }
 
 			public RangBuffer()
 			{

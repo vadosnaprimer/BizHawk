@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using LuaInterface;
 
-// TODO - evaluate for re-entrancy problems
+//TODO - evaluate for re-entrancy problems
+
 namespace BizHawk.Client.Common
 {
 	public unsafe class LuaSandbox
@@ -35,9 +39,9 @@ namespace BizHawk.Client.Common
 		{
 			string target = CurrentDirectory + "\\";
 
-			// first we'll bypass it with a general hack: dont do any setting if the value's already there (even at the OS level, setting the directory can be slow)
-			// yeah I know, not the smoothest move to compare strings here, in case path normalization is happening at some point
-			// but you got any better ideas?
+			//first we'll bypass it with a general hack: dont do any setting if the value's already there (even at the OS level, setting the directory can be slow)
+			//yeah I know, not the smoothest move to compare strings here, in case path normalization is happening at some point
+			//but you got any better ideas?
 			if (currDirSpeedHack == null)
 				currDirSpeedHack = CoolGetCurrentDirectory();
 			if (currDirSpeedHack == path)
@@ -92,7 +96,10 @@ namespace BizHawk.Client.Common
 			{
 				Console.WriteLine(ex);
 				Logger(ex.ToString());
-			    exceptionCallback?.Invoke();
+				if (exceptionCallback != null)
+				{
+					exceptionCallback();
+				}
 			}
 			finally
 			{
@@ -112,8 +119,8 @@ namespace BizHawk.Client.Common
 
 		public static LuaSandbox GetSandbox(Lua thread)
 		{
-			// this is just placeholder.
-			// we shouldnt be calling a sandbox with no thread--construct a sandbox properly
+			//this is just placeholder.
+			//we shouldnt be calling a sandbox with no thread--construct a sandbox properly
 			if (thread == null)
 			{
 				return new LuaSandbox();
@@ -126,8 +133,8 @@ namespace BizHawk.Client.Common
 					return sandbox;
 				else
 				{
-					// for now: throw exception (I want to manually creating them)
-					// return CreateSandbox(thread);
+					//for now: throw exception (I want to manually creating them)
+					//return CreateSandbox(thread);
 					throw new InvalidOperationException("HOARY GORILLA HIJINX");
 				}
 			}

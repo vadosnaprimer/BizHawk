@@ -105,9 +105,10 @@ namespace BizHawk.Client.Common
 
 							Add(new LuaFile(scriptPath)
 							{
-								State = !Global.Config.DisableLuaScriptsOnLoad && line.Substring(0, 1) == "1"
-									 ? LuaFile.RunState.Running
-									 : LuaFile.RunState.Disabled
+								State = (
+										!Global.Config.DisableLuaScriptsOnLoad 
+										&& line.Substring(0, 1) == "1"
+									) ? LuaFile.RunState.Running : LuaFile.RunState.Disabled
 							});
 						}
 					}
@@ -117,9 +118,12 @@ namespace BizHawk.Client.Common
 				ForEach(lua => Global.Config.RecentLua.Add(lua.Path));
 
 				_filename = path;
-			    LoadCallback?.Invoke();
+				if (LoadCallback != null)
+				{
+					LoadCallback();
+				}
 
-			    return true;
+				return true;
 			}
 			
 			return false;

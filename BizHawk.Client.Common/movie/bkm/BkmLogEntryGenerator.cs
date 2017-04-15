@@ -163,7 +163,7 @@ namespace BizHawk.Client.Common
 
 			for (int player = 1; player <= BkmMnemonicConstants.PLAYERS[_controlType]; player++)
 			{
-				var prefix = string.Empty;
+				var prefix = String.Empty;
 				if (_controlType != "Gameboy Controller" && _controlType != "TI83 Controller")
 				{
 					prefix = "P" + player + " ";
@@ -199,13 +199,19 @@ namespace BizHawk.Client.Common
 		{
 			return GenerateLogEntry()
 				.Replace(".", " ")
-				.Replace("|", string.Empty)
+				.Replace("|", "")
 				.Replace(" 000, 000", "         ");
 		}
 
-		public bool IsEmpty => EmptyEntry == GenerateLogEntry();
+		public bool IsEmpty
+		{
+			get
+			{
+				return EmptyEntry == GenerateLogEntry();
+			}
+		}
 
-	    public string EmptyEntry
+		public string EmptyEntry
 		{
 			get
 			{
@@ -254,9 +260,15 @@ namespace BizHawk.Client.Common
 			}
 		}
 
-		public IMovieController MovieControllerAdapter => new BkmControllerAdapter();
+		public IMovieController MovieControllerAdapter
+		{
+			get
+			{
+				return new BkmControllerAdapter();
+			}
+		}
 
-	    #region Privates
+		#region Privates
 
 		private bool IsBasePressed(string name)
 		{
@@ -499,7 +511,7 @@ namespace BizHawk.Client.Common
 							input.Append(' ');
 						}
 
-						input.Append($"{val:000}").Append(',');
+						input.Append(String.Format("{0:000}", val)).Append(',');
 					}
 
 					input.Remove(input.Length - 1, 1);

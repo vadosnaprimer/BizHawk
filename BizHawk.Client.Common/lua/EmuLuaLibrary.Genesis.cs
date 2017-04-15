@@ -18,9 +18,9 @@ namespace BizHawk.Client.Common
 		public GenesisLuaLibrary(Lua lua, Action<string> logOutputCallback)
 			: base(lua, logOutputCallback) { }
 
-		public override string Name => "genesis";
+		public override string Name { get { return "genesis"; } }
 
-	    private GPGX.GPGXSettings GetSettings()
+		private GPGX.GPGXSettings GetSettings()
 		{
 			if (Genesis != null)
 			{
@@ -32,7 +32,10 @@ namespace BizHawk.Client.Common
 
 		private void PutSettings(GPGX.GPGXSettings settings)
 		{
-		    Genesis?.PutSettings(settings);
+			if (Genesis != null)
+			{
+				Genesis.PutSettings(settings);
+			}
 		}
 
 		[LuaMethodAttributes(

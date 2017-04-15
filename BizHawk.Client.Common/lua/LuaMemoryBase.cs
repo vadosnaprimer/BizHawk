@@ -32,10 +32,12 @@ namespace BizHawk.Client.Common
 				{
 					return MemoryDomainCore;
 				}
-
-				var error = $"Error: {Emulator.Attributes().CoreName} does not implement memory domains";
-				Log(error);
-				throw new NotImplementedException(error);
+				else
+				{
+					var error = string.Format("Error: {0} does not implement memory domains", Emulator.Attributes().CoreName);
+					Log(error);
+					throw new NotImplementedException(error);
+				}
 			}
 		}
 
@@ -45,22 +47,25 @@ namespace BizHawk.Client.Common
 			{
 				if (DomainList[domain] == null)
 				{
-					Log($"Unable to find domain: {domain}, falling back to current");
+					Log(string.Format("Unable to find domain: {0}, falling back to current", domain));
 					return Domain.Name;
 				}
+				else
+				{
+					return domain;
+				}
 
-				return domain;
 			}
 			catch // Just in case
 			{
-				Log($"Unable to find domain: {domain}, falling back to current");
+				Log(string.Format("Unable to find domain: {0}, falling back to current", domain));
 			}
 			return Domain.Name;
 		}
 
 		protected uint ReadUnsignedByte(int addr, string domain = null)
 		{
-			var d = string.IsNullOrEmpty(domain) ? Domain : DomainList[VerifyMemoryDomain(domain)];
+			var d = (string.IsNullOrEmpty(domain)) ? Domain : DomainList[VerifyMemoryDomain(domain)];
 			if (addr < d.Size)
 			{
 				return d.PeekByte(addr);
@@ -73,7 +78,7 @@ namespace BizHawk.Client.Common
 
 		protected void WriteUnsignedByte(int addr, uint v, string domain = null)
 		{
-			var d = string.IsNullOrEmpty(domain) ? Domain : DomainList[VerifyMemoryDomain(domain)];
+			var d = (string.IsNullOrEmpty(domain)) ? Domain : DomainList[VerifyMemoryDomain(domain)];
 			if (d.CanPoke())
 			{
 				if (addr < Domain.Size)
@@ -88,7 +93,7 @@ namespace BizHawk.Client.Common
 			}
 			else
 			{
-				Log($"Error: the domain {d.Name} is not writable");
+				Log(string.Format("Error: the domain {0} is not writable", d.Name));
 			}
 		}
 
@@ -173,12 +178,12 @@ namespace BizHawk.Client.Common
 
 		protected LuaTable ReadByteRange(int addr, int length, string domain = null)
 		{
-			var d = string.IsNullOrEmpty(domain) ? Domain : DomainList[VerifyMemoryDomain(domain)];
+			var d = (string.IsNullOrEmpty(domain)) ? Domain : DomainList[VerifyMemoryDomain(domain)];
 			var lastAddr = length + addr;
 			var table = Lua.NewTable();
 			if (lastAddr < d.Size)
 			{
-				for (var i = 0; i < length; i++)
+				for (var i = 0; i <length ; i++)
 				{
 					int a = addr + i;
 					var v = d.PeekByte(a);
@@ -196,7 +201,7 @@ namespace BizHawk.Client.Common
 
 		protected void WriteByteRange(LuaTable memoryblock, string domain = null)
 		{
-			var d = string.IsNullOrEmpty(domain) ? Domain : DomainList[VerifyMemoryDomain(domain)];
+			var d = (string.IsNullOrEmpty(domain)) ? Domain : DomainList[VerifyMemoryDomain(domain)];
 			if (d.CanPoke())
 			{
 				foreach (var address in memoryblock.Keys)
@@ -215,29 +220,31 @@ namespace BizHawk.Client.Common
 			}
 			else
 			{
-				Log($"Error: the domain {d.Name} is not writable");
+				Log(string.Format("Error: the domain {0} is not writable", d.Name));
 			}
 		}
 
 		protected float ReadFloat(int addr, bool bigendian, string domain = null)
 		{
-			var d = string.IsNullOrEmpty(domain) ? Domain : DomainList[VerifyMemoryDomain(domain)];
+			var d = (string.IsNullOrEmpty(domain)) ? Domain : DomainList[VerifyMemoryDomain(domain)];
 			if (addr < d.Size)
 			{
 				var val = d.PeekUint(addr, bigendian);
 				var bytes = BitConverter.GetBytes(val);
 				return BitConverter.ToSingle(bytes, 0);
 			}
-
-			Log("Warning: Attempted read " + addr +
+			else
+			{
+				Log("Warning: Attempted read " + addr +
 					" outside memory size of " + d.Size);
 
-			return 0;
+				return 0;
+			}
 		}
 
 		protected void WriteFloat(int addr, double value, bool bigendian, string domain = null)
 		{
-			var d = string.IsNullOrEmpty(domain) ? Domain : DomainList[VerifyMemoryDomain(domain)];
+			var d = (string.IsNullOrEmpty(domain)) ? Domain : DomainList[VerifyMemoryDomain(domain)];
 			if (d.CanPoke())
 			{
 				if (addr < d.Size)
@@ -255,7 +262,7 @@ namespace BizHawk.Client.Common
 			}
 			else
 			{
-				Log($"Error: the domain {Domain.Name} is not writable");
+				Log(string.Format("Error: the domain {0} is not writable", Domain.Name));
 			}
 		}
 

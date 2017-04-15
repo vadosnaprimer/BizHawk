@@ -167,7 +167,6 @@ namespace BizHawk.Common
 
 				curr = curr.Next;
 			}
-
 			System.Diagnostics.Debug.Assert(curr == null);
 		}
 

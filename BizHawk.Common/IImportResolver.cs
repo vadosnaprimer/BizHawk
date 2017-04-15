@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace BizHawk.Common
 {
@@ -16,10 +19,7 @@ namespace BizHawk.Common
 		{
 			var ret = dll.Resolve(entryPoint);
 			if (ret == IntPtr.Zero)
-			{
-				throw new NullReferenceException($"Couldn't resolve entry point \"{entryPoint}\"");
-			}
-
+				throw new NullReferenceException(string.Format("Couldn't resolve entry point \"{0}\"", entryPoint));
 			return ret;
 		}
 	}

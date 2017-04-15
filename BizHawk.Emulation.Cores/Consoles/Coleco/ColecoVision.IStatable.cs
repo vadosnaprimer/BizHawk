@@ -7,9 +7,12 @@ namespace BizHawk.Emulation.Cores.ColecoVision
 {
 	public partial class ColecoVision : IStatable
 	{
-		public bool BinarySaveStatesPreferred => false;
+		public bool BinarySaveStatesPreferred
+		{
+			get { return false; }
+		}
 
-	    public void SaveStateBinary(BinaryWriter bw)
+		public void SaveStateBinary(BinaryWriter bw)
 		{
 			SyncState(Serializer.CreateBinaryWriter(bw));
 		}

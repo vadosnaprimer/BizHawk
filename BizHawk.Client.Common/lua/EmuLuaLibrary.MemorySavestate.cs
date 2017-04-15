@@ -5,6 +5,7 @@ using System.IO;
 using LuaInterface;
 
 using BizHawk.Emulation.Common;
+using BizHawk.Emulation.Common.IEmulatorExtensions;
 
 namespace BizHawk.Client.Common
 {
@@ -16,9 +17,9 @@ namespace BizHawk.Client.Common
 		public MemorySavestateEmuLuaLibrary(Lua lua, Action<string> logOutputCallback)
 			: base(lua, logOutputCallback) { }
 
-		public override string Name => "memorysavestate";
+		public override string Name { get { return "memorysavestate"; } }
 
-	    private readonly Dictionary<Guid, byte[]> MemorySavestates = new Dictionary<Guid, byte[]>();
+		private readonly Dictionary<Guid, byte[]> MemorySavestates = new Dictionary<Guid, byte[]>();
 
 		[RequiredService]
 		private IStatable _statableCore { get; set; }
@@ -49,8 +50,8 @@ namespace BizHawk.Client.Common
 			{
 				var state = MemorySavestates[guid];
 
-				using (var ms = new MemoryStream(state))
-				using (var br = new BinaryReader(ms))
+				using (MemoryStream ms = new MemoryStream(state))
+				using (BinaryReader br = new BinaryReader(ms))
 				{
 					_statableCore.LoadStateBinary(br);
 				}

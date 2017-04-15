@@ -330,8 +330,8 @@ namespace BizHawk.Client.MultiHawk
 					TopLevel = false,
 					Text = Path.GetFileNameWithoutExtension(StripArchivePath(path)),
 					Emulator = loader.LoadedEmulator,
+
 					GL = new Bizware.BizwareGL.Drivers.OpenTK.IGL_TK(2,0,false),
-					//GL = new Bizware.BizwareGL.Drivers.SlimDX.IGL_SlimDX9(),
 					GLManager = GLManager.Instance,
 					Game = loader.Game,
 					CurrentRomPath = loader.CanonicalFullPath
@@ -372,7 +372,6 @@ namespace BizHawk.Client.MultiHawk
 				if (EmulatorWindows.Count == 1)
 				{
 					Emulator = ew.Emulator;
-					ViewSubMenu.Enabled = true;
 				}
 
 				_inputManager.SyncControls();
@@ -1290,7 +1289,6 @@ namespace BizHawk.Client.MultiHawk
 				else
 				{
 					Emulator = null;
-					ViewSubMenu.Enabled = false;
 				}
 			}
 		}

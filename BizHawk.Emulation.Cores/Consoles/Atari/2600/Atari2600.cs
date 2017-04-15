@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
+using BizHawk.Common;
 using BizHawk.Common.BufferExtensions;
 using BizHawk.Emulation.Common;
 
@@ -20,13 +22,16 @@ namespace BizHawk.Emulation.Cores.Atari.Atari2600
 		private readonly GameInfo _game;
 		private int _frame;
 
-		private ITraceable Tracer { get; }
+		private ITraceable Tracer { get; set; }
 
 		[CoreConstructor("A26")]
 		public Atari2600(CoreComm comm, GameInfo game, byte[] rom, object settings, object syncSettings)
 		{
 			var ser = new BasicServiceProvider(this);
 			ServiceProvider = ser;
+
+			MemoryCallbacks = new MemoryCallbackSystem();
+			InputCallbacks = new InputCallbackSystem();
 
 			Ram = new byte[128];
 			CoreComm = comm;
@@ -71,11 +76,11 @@ namespace BizHawk.Emulation.Cores.Atari.Atari2600
 			get { return _pal ? DisplayType.PAL : Common.DisplayType.NTSC; }
 		}
 
-		public string SystemId => "A26";
+		public string SystemId { get { return "A26"; } }
 
-	    public string BoardName => _mapper.GetType().Name;
+		public string BoardName { get { return _mapper.GetType().Name; } }
 
-	    public CoreComm CoreComm { get; private set; }
+		public CoreComm CoreComm { get; private set; }
 
 		public ControllerDefinition ControllerDefinition { get { return Atari2600ControllerDefinition; } }
 

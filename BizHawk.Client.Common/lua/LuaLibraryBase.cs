@@ -43,10 +43,7 @@ namespace BizHawk.Client.Common
 			lock (ThreadMutex)
 			{
 				if (CurrentHostThread != null)
-				{
 					throw new InvalidOperationException("Can't have lua running in two host threads at a time!");
-				}
-
 				CurrentHostThread = Thread.CurrentThread;
 				CurrentThread = luaThread;
 			}
@@ -55,7 +52,10 @@ namespace BizHawk.Client.Common
 
 		protected void Log(object message)
 		{
-			LogOutputCallback?.Invoke(message.ToString());
+			if (LogOutputCallback != null)
+			{
+				LogOutputCallback(message.ToString());
+			}
 		}
 
 		public virtual void LuaRegister(Type callingLibrary, LuaDocumentation docs = null)
@@ -74,7 +74,10 @@ namespace BizHawk.Client.Common
 				var luaName = Name + "." + luaMethodAttr.Name;
 				Lua.RegisterFunction(luaName, this, method);
 
-				docs?.Add(new LibraryFunction(Name, callingLibrary.Description(), method));
+				if (docs != null)
+				{
+					docs.Add(new LibraryFunction(Name, callingLibrary.Description(), method));
+				}
 			}
 		}
 

@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 
+using BizHawk.Common;
 using BizHawk.Common.BufferExtensions;
 
 namespace BizHawk.Emulation.Common

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 
 using ICSharpCode.SharpZipLib.Zip;
+//using Ionic.Zip;
 
 namespace BizHawk.Client.Common
 {

@@ -38,10 +38,9 @@ namespace BizHawk.Client.EmuHawk
 		public DisplayManager(PresentationPanel presentationPanel)
 		{
 			GL = GlobalWin.GL;
-			GLManager = GlobalWin.GLManager;
 			this.presentationPanel = presentationPanel;
 			GraphicsControl = this.presentationPanel.GraphicsControl;
-			CR_GraphicsControl = GLManager.GetContextForGraphicsControl(GraphicsControl);
+			CR_GraphicsControl = GlobalWin.GLManager.GetContextForGraphicsControl(GraphicsControl);
 
 			//it's sort of important for these to be initialized to something nonzero
 			currEmuWidth = currEmuHeight = 1;
@@ -109,7 +108,7 @@ namespace BizHawk.Client.EmuHawk
 			foreach (var f in ShaderChainFrugalizers)
 				if (f != null)
 					f.Dispose();
-			foreach (var s in new[] { ShaderChain_hq2x, ShaderChain_scanlines, ShaderChain_bicubic, ShaderChain_user })
+			foreach (var s in new [] { ShaderChain_hq2x, ShaderChain_scanlines, ShaderChain_bicubic, ShaderChain_user })
 				if (s != null)
 					s.Dispose();
 			TheOneFont.Dispose();
@@ -117,8 +116,7 @@ namespace BizHawk.Client.EmuHawk
 		}
 
 		//rendering resources:
-		IGL GL;
-		GLManager GLManager;
+		public IGL GL;
 		StringRenderer TheOneFont;
 		IGuiRenderer Renderer;
 
@@ -170,7 +168,7 @@ namespace BizHawk.Client.EmuHawk
 		System.Windows.Forms.Padding CalculateCompleteContentPadding(bool user, bool source)
 		{
 			var padding = new System.Windows.Forms.Padding();
-
+			
 			if(user)
 				padding += GameExtraPadding;
 
@@ -283,7 +281,7 @@ namespace BizHawk.Client.EmuHawk
 			if (finalFilter == Filters.FinalPresentation.eFilterOption.Bicubic)
 				AppendRetroShaderChain(chain, "bicubic", ShaderChain_bicubic, null);
 
-			//add final presentation
+			//add final presentation 
 			chain.AddFilter(fPresent, "presentation");
 
 			//add lua layer 'native'
@@ -330,10 +328,10 @@ namespace BizHawk.Client.EmuHawk
 		{
 			//first, turn it into a window coordinate
 			p = presentationPanel.Control.PointToClient(p);
-
+			
 			//now, if theres no filter program active, just give up
 			if (CurrentFilterProgram == null) return p;
-
+			
 			//otherwise, have the filter program untransform it
 			Vector2 v = new Vector2(p.X, p.Y);
 			v = CurrentFilterProgram.UntransformPoint("default",v);
@@ -354,6 +352,7 @@ namespace BizHawk.Client.EmuHawk
 			return new Point((int)v.X, (int)v.Y);
 		}
 
+
 		/// <summary>
 		/// This will receive an emulated output frame from an IVideoProvider and run it through the complete frame processing pipeline
 		/// Then it will stuff it into the bound PresentationPanel.
@@ -370,6 +369,7 @@ namespace BizHawk.Client.EmuHawk
 				simulate = displayNothing,
 				chain_outsize = GraphicsControl.Size,
 				includeOSD = true,
+				
 			};
 			UpdateSourceInternal(job);
 		}
@@ -409,7 +409,7 @@ namespace BizHawk.Client.EmuHawk
 			};
 			UpdateSourceInternal(job);
 			return job.offscreenBB;
-		}
+		}		
 
 		class FakeVideoProvider : IVideoProvider
 		{
@@ -440,9 +440,10 @@ namespace BizHawk.Client.EmuHawk
 			}
 		}
 
+
 		/// <summary>
 		/// Attempts to calculate a good client size with the given zoom factor, considering the user's DisplayManager preferences
-		/// TODO - this needs to be redone with a concept different from zoom factor.
+		/// TODO - this needs to be redone with a concept different from zoom factor. 
 		/// basically, each increment of a 'zoomlike' factor should definitely increase the viewable area somehow, even if it isnt strictly by an entire zoom level.
 		/// </summary>
 		public Size CalculateClientSize(IVideoProvider videoProvider, int zoom)
@@ -465,7 +466,7 @@ namespace BizHawk.Client.EmuHawk
 				virtualWidth = Global.Config.DispCustomUserARWidth;
 				virtualHeight = Global.Config.DispCustomUserARHeight;
 			}
-
+			
 			if (ar_customRatio)
 			{
 				FixRatio(Global.Config.DispCustomUserARX, Global.Config.DispCustomUserARY, videoProvider.BufferWidth, videoProvider.BufferHeight, out virtualWidth, out virtualHeight);
@@ -504,7 +505,7 @@ namespace BizHawk.Client.EmuHawk
 
 						//this would malfunction for AR <= 0.5 or AR >= 2.0
 						//EDIT - in fact, we have AR like that coming from PSX, sometimes, so maybe we should solve this better
-						Vector2 PS = new Vector2(1, 1);
+						Vector2 PS = new Vector2(1, 1); 
 
 						//here's how we define zooming, in this case:
 						//make sure each step is an increment of zoom for at least one of the dimensions (or maybe both of them)
@@ -514,7 +515,7 @@ namespace BizHawk.Client.EmuHawk
 						for (int i = 1; i < zoom;i++)
 						{
 							//would not be good to run this per frame, but it seems to only run when the resolution changes, etc.
-							Vector2[] trials = new[] {
+							Vector2[] trials = new [] {
 								PS + new Vector2(1, 0),
 								PS + new Vector2(0, 1),
 								PS + new Vector2(1, 1)
@@ -529,7 +530,7 @@ namespace BizHawk.Client.EmuHawk
 								//II.
 								//Vector2 calc = Vector2.Multiply(trials[t], VS);
 								//float test_ar = calc.X / calc.Y;
-
+								
 								//not clear which approach is superior
 								float deviation_linear = Math.Abs(test_ar - target_par);
 								float deviation_geom = test_ar / target_par;
@@ -607,7 +608,7 @@ namespace BizHawk.Client.EmuHawk
 			//no drawing actually happens. it's important not to begin drawing on a control
 			if (!job.simulate && !job.offscreen)
 			{
-				GLManager.Activate(CR_GraphicsControl);
+				GlobalWin.GLManager.Activate(CR_GraphicsControl);
 			}
 
 			IVideoProvider videoProvider = job.videoProvider;
@@ -615,7 +616,7 @@ namespace BizHawk.Client.EmuHawk
 			Size chain_outsize = job.chain_outsize;
 
 			//simulate = true;
-
+			
 			int vw = videoProvider.BufferWidth;
 			int vh = videoProvider.BufferHeight;
 
@@ -642,7 +643,7 @@ namespace BizHawk.Client.EmuHawk
 			vh += padding.Vertical;
 
 			int[] videoBuffer = videoProvider.GetVideoBuffer();
-
+			
 			int bufferWidth = videoProvider.BufferWidth;
 			int bufferHeight = videoProvider.BufferHeight;
 			bool isGlTextureId = videoBuffer.Length == 1;
@@ -665,7 +666,7 @@ namespace BizHawk.Client.EmuHawk
 
 					//now, acquire the data sent from the videoProvider into a texture
 					videoTexture = VideoTextureFrugalizer.Get(bb);
-
+					
 					//lets not use this. lets define BizwareGL to make clamp by default (TBD: check opengl)
 					//GL.SetTextureWrapMode(videoTexture, true);
 				}
@@ -685,7 +686,7 @@ namespace BizHawk.Client.EmuHawk
 			//setup the source image filter
 			Filters.SourceImage fInput = filterProgram["input"] as Filters.SourceImage;
 			fInput.Texture = videoTexture;
-
+			
 			//setup the final presentation filter
 			Filters.FinalPresentation fPresent = filterProgram["presentation"] as Filters.FinalPresentation;
 			fPresent.VirtualTextureSize = new Size(vw, vh);
@@ -740,7 +741,7 @@ namespace BizHawk.Client.EmuHawk
 				//for now, it's assumed that the presentation panel is the main window, but that may not always be true
 				if (vsync && Global.Config.DispAlternateVsync && Global.Config.VSyncThrottle)
 				{
-					dx9 = GL as IGL_SlimDX9;
+					dx9 = GlobalWin.GL as IGL_SlimDX9;
 					if (dx9 != null)
 					{
 						alternateVsync = true;
@@ -775,7 +776,7 @@ namespace BizHawk.Client.EmuHawk
 
 			CurrentFilterProgram.RenderTargetProvider = new DisplayManagerRenderTargetProvider((size) => ShaderChainFrugalizers[rtCounter++].Get(size));
 
-			GL.BeginScene();
+			GlobalWin.GL.BeginScene();
 
 			//run filter chain
 			Texture2d texCurr = null;
@@ -900,8 +901,8 @@ namespace BizHawk.Client.EmuHawk
 			currNativeHeight += ClientExtraPadding.Vertical;
 
 			int width,height;
-			if(name == "emu") {
-				width = currEmuWidth;
+			if(name == "emu") { 
+				width = currEmuWidth; 
 				height = currEmuHeight;
 				width += GameExtraPadding.Horizontal;
 				height += GameExtraPadding.Vertical;
@@ -971,6 +972,7 @@ namespace BizHawk.Client.EmuHawk
 				public readonly StringRenderer font;
 			}
 
+	
 			IBlitterFont IBlitter.GetFontType(string fontType) { return new FontWrapper(Owner.TheOneFont); }
 			void IBlitter.DrawString(string s, IBlitterFont font, Color color, float x, float y)
 			{
@@ -986,5 +988,8 @@ namespace BizHawk.Client.EmuHawk
 			}
 			public Rectangle ClipBounds { get; set; }
 		}
+
+		
 	}
+
 }

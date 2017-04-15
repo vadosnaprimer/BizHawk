@@ -1,4 +1,9 @@
-﻿using LuaInterface;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using LuaInterface;
+using System.Reflection;
 
 namespace BizHawk.Client.Common
 {
@@ -15,7 +20,7 @@ namespace BizHawk.Client.Common
 			{
 				if (method.IsPublic)
 				{
-					table[method.Name] = lua.RegisterFunction(string.Empty, obj, method);
+					table[method.Name] = lua.RegisterFunction("", obj, method);
 				}
 			}
 

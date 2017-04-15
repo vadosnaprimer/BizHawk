@@ -4,13 +4,25 @@ namespace BizHawk.Client.Common
 {
 	public partial class BkmMovie
 	{
-		public IDictionary<string, string> HeaderEntries => Header;
+		public IDictionary<string, string> HeaderEntries
+		{
+			get
+			{
+				return Header;
+			}
+		}
+		
+		public SubtitleList Subtitles
+		{
+			get { return Header.Subtitles; }
+		}
 
-	    public SubtitleList Subtitles => Header.Subtitles;
+		public IList<string> Comments
+		{
+			get { return Header.Comments; }
+		}
 
-	    public IList<string> Comments => Header.Comments;
-
-	    public string SyncSettingsJson
+		public string SyncSettingsJson
 		{
 			get { return Header[HeaderKeys.SYNCSETTINGS]; }
 			set { Header[HeaderKeys.SYNCSETTINGS] = value; }
@@ -29,10 +41,7 @@ namespace BizHawk.Client.Common
 		}
 
 		// Bkm doesn't support saveram anchored movies
-		public bool StartsFromSaveRam
-		{
-			get { return false; } set { }
-		}
+		public bool StartsFromSaveRam { get { return false; } set { } }
 
 		public string GameName
 		{

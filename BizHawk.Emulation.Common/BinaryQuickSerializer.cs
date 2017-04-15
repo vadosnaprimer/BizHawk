@@ -1,14 +1,15 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
+using System.Text;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.InteropServices;
-
+using System.Linq.Expressions;
+using System.IO;
 using BizHawk.Common;
+using BizHawk.Common.ReflectionExtensions;
+using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 
 namespace BizHawk.Emulation.Common
 {

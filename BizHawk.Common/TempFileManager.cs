@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace BizHawk.Common
 {
@@ -12,17 +11,13 @@ namespace BizHawk.Common
 	/// </summary>
 	public static class TempFileCleaner
 	{
-		// TODO - manage paths other than %temp%, make not static, or allow adding multiple paths to static instance
+		//todo - manage paths other than %temp%, make not static, or allow adding multiple paths to static instance
 
 		public static string GetTempFilename(string friendlyname, string extension = null, bool delete = true)
 		{
 			string guidPart = Guid.NewGuid().ToString();
-			var fname = $"biz-{System.Diagnostics.Process.GetCurrentProcess().Id}-{friendlyname}-{guidPart}{extension ?? string.Empty}";
-			if (delete)
-			{
-				fname = RenameTempFilenameForDelete(fname);
-			}
-
+			var fname = string.Format("biz-{0}-{1}-{2}{3}", System.Diagnostics.Process.GetCurrentProcess().Id, friendlyname, guidPart, extension ?? "");
+			if (delete) fname = RenameTempFilenameForDelete(fname);
 			return Path.Combine(Path.GetTempPath(), fname);
 		}
 
@@ -30,11 +25,7 @@ namespace BizHawk.Common
 		{
 			string filename = Path.GetFileName(path);
 			string dir = Path.GetDirectoryName(path);
-			if (!filename.StartsWith("biz-"))
-			{
-				throw new InvalidOperationException();
-			}
-
+			if (!filename.StartsWith("biz-")) throw new InvalidOperationException();
 			filename = "bizdelete-" + filename.Remove(0, 4);
 			return Path.Combine(dir, filename);
 		}
@@ -44,15 +35,11 @@ namespace BizHawk.Common
 			lock (typeof(TempFileCleaner))
 			{
 				if (thread != null)
-				{
 					return;
-				}
 
-				thread = new Thread(ThreadProc)
-				{
-					IsBackground = true,
-					Priority = ThreadPriority.Lowest
-				};
+				thread = new System.Threading.Thread(ThreadProc);
+				thread.IsBackground = true;
+				thread.Priority = System.Threading.ThreadPriority.Lowest;
 				thread.Start();
 			}
 		}
@@ -72,7 +59,7 @@ namespace BizHawk.Common
 				{
 					try
 					{
-						// SHUT. UP. THE. EXCEPTIONS.
+						//SHUT. UP. THE. EXCEPTIONS.
 						#if WINDOWS
 						DeleteFileW(fi.FullName);
 						#else
@@ -83,12 +70,12 @@ namespace BizHawk.Common
 					{
 					}
 
-					// try not to do more than one thing per frame
-					Thread.Sleep(100);
+					//try not to do more than one thing per frame
+					System.Threading.Thread.Sleep(100);
 				}
 
-				// try not to slam the filesystem too hard, we dont want this to cause any hiccups
-				Thread.Sleep(5000);
+				//try not to slam the filesystem too hard, we dont want this to cause any hiccups
+				System.Threading.Thread.Sleep(5000);
 			}
 		}
 
@@ -96,6 +83,6 @@ namespace BizHawk.Common
 		{
 		}
 
-		static Thread thread;
+		static System.Threading.Thread thread;
 	}
 }

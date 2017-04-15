@@ -20,7 +20,7 @@ namespace BizHawk.Common.BufferExtensions
 
 		private static readonly char[] HexConvArr = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
-		public static unsafe void SaveAsHexFast(this byte[] buffer, TextWriter writer)
+		public unsafe static void SaveAsHexFast(this byte[] buffer, TextWriter writer)
 		{
 			fixed (char* table = HexConvArr)
 			{
@@ -35,7 +35,6 @@ namespace BizHawk.Common.BufferExtensions
 						}
 				}
 			}
-
 			writer.WriteLine();
 		}
 
@@ -45,7 +44,6 @@ namespace BizHawk.Common.BufferExtensions
 			{
 				writer.Write("{0:X2}", buffer[i]);
 			}
-
 			writer.WriteLine();
 		}
 
@@ -55,7 +53,6 @@ namespace BizHawk.Common.BufferExtensions
 			{
 				writer.Write("{0:X4}", b);
 			}
-
 			writer.WriteLine();
 		}
 
@@ -65,7 +62,6 @@ namespace BizHawk.Common.BufferExtensions
 			{
 				writer.Write("{0:X4}", b);
 			}
-
 			writer.WriteLine();
 		}
 
@@ -75,7 +71,6 @@ namespace BizHawk.Common.BufferExtensions
 			{
 				writer.Write("{0:X8}", b);
 			}
-
 			writer.WriteLine();
 		}
 
@@ -85,7 +80,6 @@ namespace BizHawk.Common.BufferExtensions
 			{
 				writer.Write("{0:X8}", b);
 			}
-
 			writer.WriteLine();
 		}
 
@@ -98,7 +92,7 @@ namespace BizHawk.Common.BufferExtensions
 
 			for (int i = 0; i < buffer.Length && i * 2 < hex.Length; i++)
 			{
-				var bytehex = string.Empty + hex[i * 2] + hex[(i * 2) + 1];
+				var bytehex = "" + hex[i * 2] + hex[i * 2 + 1];
 				buffer[i] = byte.Parse(bytehex, NumberStyles.HexNumber);
 			}
 		}
@@ -134,7 +128,7 @@ namespace BizHawk.Common.BufferExtensions
 
 			for (int i = 0; i < buffer.Length && i * 4 < hex.Length; i++)
 			{
-				var shorthex = string.Empty + hex[i * 4] + hex[(i * 4) + 1] + hex[(i * 4) + 2] + hex[(i * 4) + 3];
+				var shorthex = "" + hex[i * 4] + hex[(i * 4) + 1] + hex[(i * 4) + 2] + hex[(i * 4) + 3];
 				buffer[i] = short.Parse(shorthex, NumberStyles.HexNumber);
 			}
 		}
@@ -148,7 +142,7 @@ namespace BizHawk.Common.BufferExtensions
 
 			for (int i = 0; i < buffer.Length && i * 4 < hex.Length; i++)
 			{
-				var ushorthex = string.Empty + hex[i * 4] + hex[(i * 4) + 1] + hex[(i * 4) + 2] + hex[(i * 4) + 3];
+				var ushorthex = "" + hex[i * 4] + hex[(i * 4) + 1] + hex[(i * 4) + 2] + hex[(i * 4) + 3];
 				buffer[i] = ushort.Parse(ushorthex, NumberStyles.HexNumber);
 			}
 		}
@@ -162,6 +156,7 @@ namespace BizHawk.Common.BufferExtensions
 
 			for (int i = 0; i < buffer.Length && i * 8 < hex.Length; i++)
 			{
+				//string inthex = "" + hex[i * 8] + hex[(i * 8) + 1] + hex[(i * 4) + 2] + hex[(i * 4) + 3] + hex[(i*4
 				var inthex = hex.Substring(i * 8, 8);
 				buffer[i] = int.Parse(inthex, NumberStyles.HexNumber);
 			}
@@ -187,10 +182,10 @@ namespace BizHawk.Common.BufferExtensions
 			int result = Array.FindIndex(array, 0, array.Length, (byte b) =>
 			{
 				fidx = (b == pattern[fidx]) ? fidx + 1 : 0;
-				return fidx == pattern.Length;
+				return (fidx == pattern.Length);
 			});
 
-			return result >= pattern.Length - 1;
+			return (result >= pattern.Length - 1);
 		}
 
 		public static string HashMD5(this byte[] data, int offset, int len)
@@ -221,6 +216,8 @@ namespace BizHawk.Common.BufferExtensions
 			return HashSHA1(data, 0, data.Length);
 		}
 
+		#region Helpers
+
 		private static int Hex2Int(char c)
 		{
 			if (c <= '9')
@@ -235,5 +232,7 @@ namespace BizHawk.Common.BufferExtensions
 
 			return c - 'W';
 		}
+
+		#endregion
 	}
 }

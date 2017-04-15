@@ -6,6 +6,7 @@ namespace BizHawk.Emulation.Common
 	{
 		public MissingFirmwareException(string message) : base(message)
 		{
+
 		}
 	}
 
@@ -17,6 +18,7 @@ namespace BizHawk.Emulation.Common
 		public UnsupportedGameException(string message)
 			: base(message)
 		{
+
 		}
 	}
 

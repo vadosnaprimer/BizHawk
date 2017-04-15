@@ -2,15 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 
-// TODO [LARP] - It's pointless and annoying to store such a big structure filled with static information
-// use this instead
-// public class UserBinding
-// {
+//TODO [LARP] - It's pointless and annoying to store such a big structure filled with static information
+//use this instead
+//public class UserBinding
+//{
 //  public string DisplayName;
 //  public string Bindings;
-// }
-// ...also. We should consider using something other than DisplayName for keying, maybe make a KEYNAME distinct from displayname. 
-// displayname is OK for now though.
+//}
+//...also. We should consider using something other than DisplayName for keying, maybe make a KEYNAME distinct from displayname. 
+//displayname is OK for now though.
+
 namespace BizHawk.Client.Common
 {
 	public class Binding
@@ -26,7 +27,7 @@ namespace BizHawk.Client.Common
 	[Newtonsoft.Json.JsonObject]
 	public class BindingCollection : IEnumerable<Binding>
 	{
-		public List<Binding> Bindings { get; }
+		public List<Binding> Bindings { get; private set; }
 
 		[Newtonsoft.Json.JsonConstructor]
 		public BindingCollection(List<Binding> Bindings)
@@ -74,7 +75,7 @@ namespace BizHawk.Client.Common
 		{
 			//TODO - this method is potentially disastrously O(N^2) slow due to linear search nested in loop
 
-			// Add missing entries
+			//Add missing entries
 			foreach (Binding default_binding in DefaultValues)
 			{
 				var binding = Bindings.FirstOrDefault(x => x.DisplayName == default_binding.DisplayName);
@@ -84,7 +85,7 @@ namespace BizHawk.Client.Common
 				}
 				else
 				{
-					// patch entries with updated settings (necessary because of TODO LARP
+					//patch entries with updated settings (necessary because of TODO LARP
 					binding.Ordinal = default_binding.Ordinal;
 					binding.DefaultBinding = default_binding.DefaultBinding;
 					binding.TabGroup = default_binding.TabGroup;
@@ -95,11 +96,13 @@ namespace BizHawk.Client.Common
 
 			List<Binding> entriesToRemove = (from entry in Bindings let binding = DefaultValues.FirstOrDefault(x => x.DisplayName == entry.DisplayName) where binding == null select entry).ToList();
 
-			// Remove entries that no longer exist in defaults
+			//Remove entries that no longer exist in defaults
+
 			foreach (Binding entry in entriesToRemove)
 			{
 				Bindings.Remove(entry);
 			}
+
 		}
 
 		static List<Binding> s_DefaultValues;
@@ -254,14 +257,13 @@ namespace BizHawk.Client.Common
 						Bind("Analog", "X Down Large", toolTip: "For Virtual Pad"),
 
 						Bind("Tools", "Toggle All Cheats"),
+
 					};
 
-					// set ordinals based on order in list
+					//set ordinals based on order in list
 					for (int i = 0; i < s_DefaultValues.Count; i++)
-					{
 						s_DefaultValues[i].Ordinal = i;
-					}
-				} // if (s_DefaultValues == null)
+				} //if (s_DefaultValues == null)
 
 				return s_DefaultValues;
 			}

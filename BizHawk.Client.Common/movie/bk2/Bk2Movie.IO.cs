@@ -21,7 +21,7 @@ namespace BizHawk.Client.Common
 			}
 
 			var backupName = Filename;
-			backupName = backupName.Insert(Filename.LastIndexOf("."), $".{DateTime.Now:yyyy-MM-dd HH.mm.ss}");
+			backupName = backupName.Insert(Filename.LastIndexOf("."), string.Format(".{0:yyyy-MM-dd HH.mm.ss}", DateTime.Now));
 			backupName = Path.Combine(Global.Config.PathEntries["Global", "Movie backups"].Path, Path.GetFileName(backupName));
 
 			var directory_info = new FileInfo(backupName).Directory;
@@ -197,7 +197,6 @@ namespace BizHawk.Client.Common
 					{
 						bs.PutLump(BinaryStateLump.Corestate, (BinaryWriter bw) => bw.Write(BinarySavestate));
 					}
-
 					if (SavestateFramebuffer != null)
 					{
 						bs.PutLump(BinaryStateLump.Framebuffer,
@@ -211,9 +210,7 @@ namespace BizHawk.Client.Common
 			}
 
 			if (!backup)
-			{
 				Changes = false;
-			}
 		}
 
 		protected void ClearBeforeLoad()

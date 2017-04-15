@@ -91,7 +91,7 @@ namespace BizHawk.Emulation.Cores.Nintendo.NES
 		public static bool ValidString(string s, out string why)
 		{
 			if (s == null)
-				throw new ArgumentNullException(nameof(s));
+				throw new ArgumentNullException("s");
 			if (!s.Length.In(MIN_DIGITS, MAX_DIGITS))
 			{
 				why = string.Format("String must be {0} or {1} digits long!", MIN_DIGITS, MAX_DIGITS);

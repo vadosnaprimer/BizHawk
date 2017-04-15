@@ -2,7 +2,7 @@
 {
 	/// <summary>
 	/// A default IVideoProvider that simply returns
-	/// a black screen at an arbitrary size
+	/// a black screen at an arbitruary size
 	/// </summary>
 	/// <seealso cref="IVideoProvider" />
 	public class NullVideo : IVideoProvider
@@ -12,18 +12,19 @@
 			return new int[BufferWidth * BufferHeight];
 		}
 
-		public int VirtualWidth => 256;
+		public int VirtualWidth { get { return 256; } }
+		public int VirtualHeight { get { return 192; } }
 
-	    public int VirtualHeight => 192;
+		public int BufferWidth { get { return 256; } }
+		public int BufferHeight { get { return 192; } }
 
-	    public int BufferWidth => 256;
+		public int BackgroundColor { get { return 0; } }
 
-	    public int BufferHeight => 192;
+		private static NullVideo _nullVideo = new NullVideo();
 
-	    public int BackgroundColor => 0;
-
-	    private static readonly NullVideo _nullVideo = new NullVideo();
-
-		public static NullVideo Instance => _nullVideo;
+		public static NullVideo Instance
+		{
+			get { return _nullVideo; }
+		}
 	}
 }

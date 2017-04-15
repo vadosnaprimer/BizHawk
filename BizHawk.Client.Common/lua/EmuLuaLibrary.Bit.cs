@@ -14,9 +14,9 @@ namespace BizHawk.Client.Common
 		public BitLuaLibrary(Lua lua, Action<string> logOutputCallback)
 			: base(lua, logOutputCallback) { }
 
-		public override string Name => "bit";
+		public override string Name { get { return "bit"; } }
 
-	    [LuaMethodAttributes(
+		[LuaMethodAttributes(
 			"band",
 			"Bitwise AND of 'val' against 'amt'"
 		)]

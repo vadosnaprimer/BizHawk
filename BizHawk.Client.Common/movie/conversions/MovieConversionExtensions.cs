@@ -115,9 +115,7 @@ namespace BizHawk.Client.Common.MovieConversionExtensions
 			bk2.SaveRam = old.SaveRam;
 
 			if (!backup)
-			{
 				bk2.Save();
-			}
 
 			return bk2;
 		}
@@ -144,7 +142,7 @@ namespace BizHawk.Client.Common.MovieConversionExtensions
 				}
 			}
 
-			var tas = new TasMovie(newFilename, true);
+			TasMovie tas = new TasMovie(newFilename, true);
 			tas.BinarySavestate = savestate;
 			tas.ClearLagLog();
 
@@ -187,9 +185,7 @@ namespace BizHawk.Client.Common.MovieConversionExtensions
 			foreach (TasMovieMarker marker in old.Markers)
 			{
 				if (marker.Frame > frame)
-				{
 					tas.Markers.Add(new TasMovieMarker(marker.Frame - frame, marker.Message));
-				}
 			}
 
 			tas.TasStateManager.Settings = old.TasStateManager.Settings;
@@ -220,7 +216,7 @@ namespace BizHawk.Client.Common.MovieConversionExtensions
 				}
 			}
 
-			var tas = new TasMovie(newFilename, true);
+			TasMovie tas = new TasMovie(newFilename, true);
 			tas.SaveRam = saveRam;
 			tas.TasStateManager.Clear();
 			tas.ClearLagLog();

@@ -68,5 +68,3 @@ ExternalCoreProjects/Virtu/bin/*.*
 /psx/octoshock/bizhawk/Win32
 /psx/octoshock/bizhawk/x64
 /psx/octoshock/bizhawk/*.opendb
-
-**/StyleCop.Cache
