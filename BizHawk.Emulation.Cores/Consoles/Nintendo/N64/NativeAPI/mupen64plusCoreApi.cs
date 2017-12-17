@@ -67,6 +67,28 @@ namespace BizHawk.Emulation.Cores.Nintendo.N64.NativeApi
 			M64PLUGIN_CORE
 		};
 
+		private enum m64p_video_mode
+		{
+			M64VIDEO_NONE = 1,
+			M64VIDEO_WINDOWED,
+			M64VIDEO_FULLSCREEN
+		};
+
+		private enum m64p_core_param
+		{
+			M64CORE_EMU_STATE = 1,
+			M64CORE_VIDEO_MODE,
+			M64CORE_SAVESTATE_SLOT,
+			M64CORE_SPEED_FACTOR,
+			M64CORE_SPEED_LIMITER,
+			M64CORE_VIDEO_SIZE,
+			M64CORE_AUDIO_VOLUME,
+			M64CORE_AUDIO_MUTE,
+			M64CORE_INPUT_GAMESHARK,
+			M64CORE_STATE_LOADCOMPLETE,
+			M64CORE_STATE_SAVECOMPLETE
+		};
+
 		private enum m64p_command
 		{
 			M64CMD_NOP = 0,
@@ -903,6 +925,16 @@ namespace BizHawk.Emulation.Cores.Nintendo.N64.NativeApi
 		{
 			m64pDebugSetRunState(m64p_dbg_runstate.M64P_DBG_RUNSTATE_RUNNING);
 			m64pDebugStep();
+		}
+
+		public unsafe void FullScreen(bool on)
+		{
+			int mode = (int)(on ? m64p_video_mode.M64VIDEO_FULLSCREEN : m64p_video_mode.M64VIDEO_WINDOWED);
+
+			m64pCoreDoCommandPtr(
+				m64p_command.M64CMD_CORE_STATE_SET,
+				(int)m64p_core_param.M64CORE_VIDEO_MODE,
+				new IntPtr(&mode));
 		}
 
 		public void Dispose()

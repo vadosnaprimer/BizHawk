@@ -176,6 +176,11 @@ namespace BizHawk.Emulation.Cores.Nintendo.N64
 
 		public bool IsOverridingUserExpansionSlotSetting { get; set; }
 
+		public void FullScreen(bool on)
+		{
+			api.FullScreen(on);
+		}
+
 		public void Dispose()
 		{
 			RunThreadAction(() =>

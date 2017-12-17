@@ -32,7 +32,7 @@ namespace OldAPI
 	ptr_RomOpen RomOpen = NULL;
 	ptr_RomClosed RomClosed = NULL;
 	ptr_CloseDLL CloseDLL = NULL;
-
+	ptr_ChangeWindow ChangeWindow = NULL;
 	ptr_DrawScreen DrawScreen = NULL;
 	ptr_MoveScreen MoveScreen = NULL;
 	ptr_UpdateScreen UpdateScreen = NULL;
@@ -87,7 +87,7 @@ void setup_jabo_functions()
 		OldAPI::RomOpen = (OldAPI::ptr_RomOpen)GetProcAddress(JaboDLL,"RomOpen");
 		OldAPI::RomClosed = (OldAPI::ptr_RomClosed)GetProcAddress(JaboDLL,"RomClosed");
 		OldAPI::CloseDLL = (OldAPI::ptr_CloseDLL)GetProcAddress(JaboDLL,"CloseDLL");
-		
+		OldAPI::ChangeWindow = (OldAPI::ptr_ChangeWindow)GetProcAddress(JaboDLL,"ChangeWindow");
 		OldAPI::DrawScreen = (OldAPI::ptr_DrawScreen)GetProcAddress(JaboDLL,"DrawScreen");
 		OldAPI::MoveScreen = (OldAPI::ptr_MoveScreen)GetProcAddress(JaboDLL,"MoveScreen");
 		OldAPI::UpdateScreen = (OldAPI::ptr_UpdateScreen)GetProcAddress(JaboDLL,"UpdateScreen");
@@ -342,12 +342,6 @@ EXPORT m64p_error CALL PluginGetVersion(m64p_plugin_type *PluginType, int *Plugi
 }
 #pragma endregion
 
-// IGNORE
-EXPORT void CALL ChangeWindow (void)
-{
-	LOG("API WRAPPER:\t ChangeWindow")
-}
-
 // NOTE: NEW GFX_INFO vs old
 EXPORT int CALL InitiateGFX(GFX_INFO Gfx_Info)
 {
@@ -466,6 +460,12 @@ EXPORT int CALL InitiateGFX(GFX_INFO Gfx_Info)
 	OldAPI::InitiateGFX(blah);
 
     return(TRUE);
+}
+
+EXPORT void CALL ChangeWindow (void)
+{
+	LOG("API WRAPPER:\t ChangeWindow")
+	OldAPI::ChangeWindow();
 }
 
 EXPORT void CALL MoveScreen (int xpos, int ypos)

@@ -1146,6 +1146,13 @@ namespace BizHawk.Client.EmuHawk
 				_inFullscreen = true;
 				SynchChrome();
 				WindowState = FormWindowState.Maximized; // be sure to do this after setting the chrome, otherwise it wont work fully
+
+				if (Emulator is N64 && (Emulator as N64).GetSyncSettings().VideoPlugin == PluginType.Jabo)
+				{
+					(Emulator as N64).FullScreen(true);
+				}
+
+
 				ResumeLayout();
 
 				PresentationPanel.Resized = true;
@@ -1168,6 +1175,12 @@ namespace BizHawk.Client.EmuHawk
 
 				SynchChrome();
 				Location = _windowedLocation;
+
+				if (Emulator is N64 && (Emulator as N64).GetSyncSettings().VideoPlugin == PluginType.Jabo)
+				{
+					(Emulator as N64).FullScreen(false);
+				}
+
 				ResumeLayout();
 
 				FrameBufferResized();
