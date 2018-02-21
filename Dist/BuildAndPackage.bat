@@ -1,4 +1,4 @@
-set PATH=%PATH%;C:\Program Files (x86)\git\bin;C:\Program Files\git\bin
+set PATH=%PATH%;"C:\Program Files (x86)\git\bin";"C:\Program Files\git\bin"
 
 if "%1"=="" (
 	SET NAME=BizHawk.zip
@@ -14,8 +14,8 @@ if ERRORLEVEL 1 goto MISSINGMSBUILD
 
 for /f "skip=2 tokens=2,*" %%A in ('reg.exe query "HKLM\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0" /v MSBuildToolsPath') do SET MSBUILDDIR=%%B
 
-IF NOT EXIST %MSBUILDDIR%nul goto MISSINGMSBUILD
-IF NOT EXIST %MSBUILDDIR%msbuild.exe goto MISSINGMSBUILD
+::IF NOT EXIST "%MSBUILDDIR%nul" goto MISSINGMSBUILD
+IF NOT EXIST "%MSBUILDDIR%msbuild.exe" goto MISSINGMSBUILD
 
 call "%MSBUILDDIR%msbuild.exe" ..\BizHawk.sln /p:Configuration=Release /p:Platform="x86" /t:rebuild
 
