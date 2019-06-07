@@ -111,6 +111,9 @@ namespace BizHawk.Client.ApiHawk
 				case "ChannelF":
 					return CoreSystem.ChannelF;
 
+				case "MAME":
+					return CoreSystem.MAME;
+
 				case "VB":
 				case "NGP":
 				case "DNGP":
