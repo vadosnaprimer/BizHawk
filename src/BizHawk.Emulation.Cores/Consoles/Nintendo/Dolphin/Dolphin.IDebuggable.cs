@@ -19,8 +19,8 @@ namespace BizHawk.Emulation.Cores.Nintendo.Dolphin
 			throw new NotImplementedException();
 		}
 
-		[FeatureNotImplemented]
-		public IMemoryCallbackSystem MemoryCallbacks { get; }
+		public IMemoryCallbackSystem MemoryCallbacks => _memoryCallbacks;
+		private readonly MemoryCallbackSystem _memoryCallbacks = new(new[] { "System Bus" });
 
 		public bool CanStep(StepType type) { return false; }
 
