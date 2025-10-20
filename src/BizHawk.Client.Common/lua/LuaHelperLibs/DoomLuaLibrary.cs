@@ -19,15 +19,6 @@ namespace BizHawk.Client.Common
 		public override string Name => "doom";
 		private const string ERR_MSG_UNSUPPORTED_CORE = $"`doom.*` functions can only be used with {CoreNames.DSDA}";
 
-		public delegate INamedLuaFunction NLFAddCallback(
-			LuaFunction function,
-			string theEvent,
-			Action<string> logCallback,
-			LuaFile luaFile,
-			string name = null);
-
-		public NLFAddCallback CreateAndRegisterNamedFunction { get; set; }
-
 		[RequiredService]
 		private IEmulator Emulator { get; set; }
 
@@ -42,7 +33,7 @@ namespace BizHawk.Client.Common
 			}
 
 			var callbacks = (Emulator as DSDA).RandomCallbacks;
-			var nlf = CreateAndRegisterNamedFunction(luaf, "OnPrandom", LogOutputCallback, CurrentFile, name: name);
+			var nlf = _luaLibsImpl.CreateAndRegisterNamedFunction(luaf, "OnPrandom", LogOutputCallback, CurrentFile, name: name);
 			callbacks.Add(nlf.RandomCallback);
 			nlf.OnRemove += () => callbacks.Remove(nlf.RandomCallback);
 			return nlf.GuidStr;
