@@ -147,5 +147,13 @@ namespace BizHawk.Emulation.Cores.Computers.Doom
 			PackedPlayerInput[] playerInputs,
 			ref PackedPlayerInput walkcamInputs,
 			ref PackedRenderInfo renderInfo);
+
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+		public delegate void random_cb(int pr_class);
+
+		[BizImport(CallingConvention.Cdecl)]
+		public abstract void dsda_set_random_callback(random_cb cb);
+
+
 	}
 }
