@@ -426,6 +426,5 @@ namespace BizHawk.Emulation.Cores.Computers.Doom
 				throw new InvalidOperationException($"Unknown error processing file '{filename}'");
 			}
 		}
-
 	}
 }

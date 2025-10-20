@@ -29,7 +29,7 @@ namespace BizHawk.Client.Common
 		public NLFAddCallback CreateAndRegisterNamedFunction { get; set; }
 
 		[RequiredService]
-		private IEmulator Emulator { get; }
+		private IEmulator Emulator { get; set; }
 
 		/// <exception cref="InvalidOperationException">loaded core is not DSDA-Doom</exception>
 		[LuaMethodExample("local rngcall = doom.onprandom(\r\n\tfunction()\r\n\t\tconsole.log( \"Calls the given lua function after each P_Random() call by Doom\" );\r\n\tend\r\n\t, \"Frame name\" );")]

@@ -153,7 +153,5 @@ namespace BizHawk.Emulation.Cores.Computers.Doom
 
 		[BizImport(CallingConvention.Cdecl)]
 		public abstract void dsda_set_random_callback(random_cb cb);
-
-
 	}
 }
