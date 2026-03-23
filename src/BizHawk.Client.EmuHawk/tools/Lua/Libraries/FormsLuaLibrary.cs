@@ -618,7 +618,7 @@ namespace BizHawk.Client.EmuHawk
 			description: "Draws the image in the given file (.bmp, .gif, .jpg, .png, or .tif) to a canvas. Canvases can be created with the forms.pictureBox function."
 				+ " The image will be positioned such that its top-left corner will be at (x, y) on the canvas."
 				+ " If width and height are both nil/unset, the image will be drawn at full size (100%). If both are specified, the image will be stretched to that size." // technically width or height can be specified w/o the other but let's leave that as UB
-				+ " If true is passed for the cache parameter, or if it's omitted, the file contents will be cached and re-used next time this function is called with the same path and canvas handle. The canvas' cache can be cleared with forms.clearImageCache.")]
+				+ " If true is passed for the cache parameter, or if it's omitted, the file contents will be cached and re-used next time this function is called with the same path and canvas handle. The canvas's cache can be cleared with {{forms.clearImageCache}}.")]
 		public void DrawImage(
 			long componentHandle,
 			string path,
@@ -681,7 +681,7 @@ namespace BizHawk.Client.EmuHawk
 			name: "drawImageRegion",
 			description: "Draws part of the image in the given file (.bmp, .gif, .jpg, .png, or .tif) to a canvas. Canvases can be created with the forms.pictureBox function."
 				+ " Consult this diagram to see its usage (renders embedded on the TASVideos Wiki): [https://user-images.githubusercontent.com/13409956/198868522-55dc1e5f-ae67-4ebb-a75f-558656cb4468.png|alt=Diagram showing how to use forms.drawImageRegion]"
-				+ " The file contents will be cached and re-used next time this function is called with the same path and canvas handle. The canvas' cache can be cleared with forms.clearImageCache.")]
+				+ " The file contents will be cached and re-used next time this function is called with the same path and canvas handle. The canvas's cache can be cleared with {{forms.clearImageCache}}.")]
 		public void DrawImageRegion(
 			long componentHandle,
 			string path,

@@ -34,7 +34,7 @@ namespace BizHawk.Client.Common
 #pragma warning restore MA0136
 		[LuaMethod(
 			name: "on_prandom",
-			description: "Fires immediately after each P_Random() call by Doom. Your callback can have 1 parameter, which will be an integer identifying what kind of object or action made the RNG call.")]
+			description: "Fires immediately after each {{P_Random()}} call by Doom. Your callback can have 1 parameter, which will be an integer identifying what kind of object or action made the RNG call.")]
 		public string OnPrandom(LuaFunction luaf, string name = null)
 		{
 			if (Emulator is not DSDA dsda)
@@ -84,7 +84,7 @@ namespace BizHawk.Client.Common
 #pragma warning restore MA0136
 		[LuaMethod(
 			name: "on_use",
-			description: "Fires when P_UseSpecialLine() is called by a mobj (thing). Your callback can have 2 parameters, which will be pointers to activated line and to mobj that triggered it.")]
+			description: "Fires when {{P_UseSpecialLine()}} is called by a mobj (thing). Your callback can have 2 parameters, which will be pointers to activated line and to mobj that triggered it.")]
 		public string OnUse(LuaFunction luaf, string name = null)
 		{
 			if (Emulator is not DSDA dsda)
@@ -109,7 +109,7 @@ namespace BizHawk.Client.Common
 #pragma warning restore MA0136
 		[LuaMethod(
 			name: "on_cross",
-			description: "Fires when P_CrossCompatibleSpecialLine() is called by a mobj (thing). Your callback can have 2 parameters, which will be pointers to activated line and to mobj that triggered it.")]
+			description: "Fires when {{P_CrossCompatibleSpecialLine()}} is called by a mobj (thing). Your callback can have 2 parameters, which will be pointers to activated line and to mobj that triggered it.")]
 		public string OnCross(LuaFunction luaf, string name = null)
 		{
 			if (Emulator is not DSDA dsda)

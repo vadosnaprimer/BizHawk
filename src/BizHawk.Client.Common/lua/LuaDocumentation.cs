@@ -8,6 +8,71 @@ namespace BizHawk.Client.Common
 {
 	public class LuaDocumentation : List<LibraryFunction>
 	{
+		public string ToLuaTables()
+		{
+			var sb = new StringBuilder();
+			sb
+				.AppendLine("---@meta no-require")
+				.AppendLine("--- Lua functions available for the BizHawk emulator")
+				.AppendLine("--- https://tasvideos.org/Bizhawk")
+				.AppendLine().AppendLine();
+
+			foreach (var (Name, Description) in this.Select(lf => (Name: lf.Library, Description: lf.LibraryDescription))
+				.Distinct()
+				.OrderBy(library => library.Name))
+			{
+				sb
+					.AppendFormat("---@class {0}lib", Name)
+					.AppendLine()
+					.AppendFormat("{0} = {{}}", Name)
+					.AppendLine().AppendLine();
+
+				foreach (var func in this.Where(lf => lf.Library == Name).OrderBy(lf => lf.Name))
+				{
+					sb
+						.AppendFormat("--- {0}", func.Description
+							.Replace("{{", "`")
+							.Replace("}}", "`"))
+						.AppendLine();
+
+					if (func.Example != null)
+					{
+						sb
+							.AppendLine("---")
+							.AppendLine("--- Example:")
+							.AppendLine("---")
+							.AppendFormat("---\t\t{0}", func.Example
+								.Replace("\r\n", "\r\n---\t\t")
+								.Replace("{{", "`")
+								.Replace("}}", "`"))
+							.AppendLine();
+					}
+
+					sb
+						.AppendLine("---")
+						.AppendFormat("{0}", func.ParameterAnnotationsLua)
+						.AppendFormat("---@return {0}", func.ReturnTypeLua)
+						.AppendLine();
+
+					if (func.IsDeprecated)
+					{
+						sb.AppendLine("---@deprecated");
+					}
+
+					sb
+						.AppendFormat("function {0}.{1}{2} end",
+							func.Library,
+							func.Name,
+							func.ParameterListLua)
+						.AppendLine().AppendLine();
+				}
+				sb
+					.AppendLine().AppendLine();
+			}
+
+			return sb.ToString();
+		}
+
 		public string ToTASVideosWikiMarkup()
 		{
 			var sb = new StringBuilder();
@@ -88,14 +153,12 @@ namespace BizHawk.Client.Common
 			{
 				sb
 					.AppendFormat("%%TAB {0}%%", library.Name)
-					.AppendLine()
-					.AppendLine();
+					.AppendLine().AppendLine();
 				if (!string.IsNullOrWhiteSpace(library.Description))
 				{
 					sb
 						.Append(library.Description)
-						.AppendLine()
-						.AppendLine();
+						.AppendLine().AppendLine();
 				}
 
 				foreach (var func in this.Where(lf => lf.Library == library.Name).OrderBy(lf => lf.Name))
@@ -104,7 +167,7 @@ namespace BizHawk.Client.Common
 					sb
 						.AppendFormat("__{0}.{1}__%%%", func.Library, func.Name)
 						.AppendLine().AppendLine()
-						.AppendFormat("* {4}{0} {1}.{2}{3}", func.ReturnType, func.Library, func.Name, func.ParameterList.Replace("[", "[[").Replace("]", "]]"), deprecated)
+						.AppendFormat("* {4}{0} {1}.{2}{3}", func.ReturnType, func.Library, func.Name, func.ParameterListWiki.Replace("[", "[[").Replace("]", "]]"), deprecated)
 						.AppendLine().AppendLine()
 						.AppendFormat("* {0}", func.Description)
 						.AppendLine().AppendLine();
@@ -152,7 +215,7 @@ namespace BizHawk.Client.Common
 
 				var sb = new StringBuilder();
 
-				if (f.ParameterList.Length is not 0)
+				if (f.ParameterListWiki.Length is not 0)
 				{
 					sb
 						.Append($"{f.Library}.{f.Name}(");
@@ -231,13 +294,15 @@ namespace BizHawk.Client.Common
 
 		public string Example => _luaExampleAttribute?.Example;
 
-		private string _parameterList;
+		private string _parameterListWiki;
+		private string _parameterListLua;
+		private string _parameterAnnotationsLua;
 
-		public string ParameterList
+		public string ParameterListWiki
 		{
 			get
 			{
-				if (_parameterList == null)
+				if (_parameterListWiki == null)
 				{
 					var parameters = Method.GetParameters();
 
@@ -263,20 +328,74 @@ namespace BizHawk.Client.Common
 					}
 
 					list.Append(')');
-					_parameterList = list.ToString();
+					_parameterListWiki = list.ToString();
 				}
 
-				return _parameterList;
+				return _parameterListWiki;
 			}
 		}
 
-		private static string TypeCleanup(string str)
+		public string ParameterListLua
+		{
+			get
+			{
+				if (_parameterListLua == null)
+				{
+					var parameters = Method.GetParameters();
+
+					var list = new StringBuilder();
+					list.Append('(');
+					for (var i = 0; i < parameters.Length; i++)
+					{
+						list.Append(parameters[i].Name);
+
+						if (i < parameters.Length - 1)
+						{
+							list.Append(", ");
+						}
+					}
+
+					list.Append(')');
+					_parameterListLua = list.ToString();
+				}
+
+				return _parameterListLua;
+			}
+		}
+
+		public string ParameterAnnotationsLua
+		{
+			get
+			{
+				if (_parameterAnnotationsLua == null)
+				{
+					var parameters = Method.GetParameters();
+
+					var list = new StringBuilder();
+					for (var i = 0; i < parameters.Length; i++)
+					{
+						list.AppendFormat("---@param {0}{1} {2}",
+							parameters[i].Name,
+							parameters[i].DefaultValue != null ? "?" : "",
+							TypeCleanup(parameters[i].ParameterType.Name, true));
+						list.AppendLine();
+					}
+
+					_parameterAnnotationsLua = list.ToString();
+				}
+
+				return _parameterAnnotationsLua;
+			}
+		}
+
+		public static string TypeCleanup(string str, bool lua = false)
 		{
 			return str
 				.Replace("System", "")
+				.Replace("NLua", "")
+				.Replace("LuaInterface", "")
 				.Replace(" ", "")
 				.Replace(".", "")
-				.Replace("LuaInterface", "")
 				.Replace("Object[]", "object[] ")
 				.Replace("Object", "object ")
 				.Replace("Nullable`1[Boolean]", "bool? ")
@@ -285,25 +404,25 @@ namespace BizHawk.Client.Common
 				.Replace("String", "string ")
 				.Replace("LuaTable", "table ")
 				.Replace("LuaFunction", "func ")
-				.Replace("Nullable`1[Int32]", "int? ")
-				.Replace("Nullable`1[UInt32]", "uint? ")
+				.Replace("Nullable`1[Int32]", lua ? "integer?" : "int? ")
+				.Replace("Nullable`1[UInt32]", lua ? "integer?" : "uint? ")
 				.Replace("Byte[]", "string ")
 				.Replace("Nullable`1[ReadOnlyMemory`1[Byte]]", "string? ")
 				.Replace("Nullable`1[Memory`1[Byte]]", "string? ")
 				.Replace("ReadOnlyMemory`1[Byte]", "string ")
 				.Replace("Memory`1[Byte]", "string ")
-				.Replace("Byte", "byte ")
-				.Replace("Int16", "short ")
-				.Replace("Int32", "int ")
-				.Replace("Int64", "long ")
-				.Replace("Ushort", "ushort ")
-				.Replace("Ulong", "ulong ")
-				.Replace("UInt32", "uint ")
-				.Replace("UInt64", "ulong ")
-				.Replace("Double", "double ")
-				.Replace("Uint", "uint ")
-				.Replace("Nullable`1[DrawingColor]", "Color? ")
-				.Replace("DrawingColor", "Color ")
+				.Replace("Byte", lua ? "integer" : "byte ")
+				.Replace("UInt32", lua ? "integer" : "uint ")
+				.Replace("UInt64", lua ? "integer" : "ulong ")
+				.Replace("Uint", lua ? "integer" : "uint ")
+				.Replace("Int16", lua ? "integer" : "short ")
+				.Replace("Int32", lua ? "integer" : "int ")
+				.Replace("Int64", lua ? "integer" : "long ")
+				.Replace("Ushort", lua ? "integer" : "ushort ")
+				.Replace("Ulong", lua ? "integer" : "ulong ")
+				.Replace("Double", lua ? "number" : "double ")
+				.Replace("Nullable`1[DrawingColor]", lua ? "integer" : "Color? ")
+				.Replace("DrawingColor", lua ? "integer" : "Color ")
 				.ToLowerInvariant();
 		}
 
@@ -313,6 +432,17 @@ namespace BizHawk.Client.Common
 			{
 				var returnType = Method.ReturnType.ToString();
 				return TypeCleanup(returnType).Trim();
+			}
+		}
+
+		public string ReturnTypeLua
+		{
+			get
+			{
+				var returnType = Method.ReturnType.ToString();
+				return TypeCleanup(returnType, true)
+					.Replace("void", "nil")
+					.Trim();
 			}
 		}
 	}

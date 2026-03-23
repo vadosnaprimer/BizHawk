@@ -44,7 +44,7 @@ namespace BizHawk.Client.Common
 			=> APIs.Gui.ClearGraphics(surfaceID: UseOrFallback(surfaceName));
 
 		[LuaMethodExample("gui.cleartext( );")]
-		[LuaMethod("cleartext", "clears all text created by gui.text()")]
+		[LuaMethod("cleartext", "clears all text created by {{gui.text()}}")]
 		public void ClearText()
 			=> APIs.Gui.ClearText();
 
@@ -64,7 +64,7 @@ namespace BizHawk.Client.Common
 			=> APIs.Gui.SetDefaultTextBackground(_th.ParseColor(color));
 
 		[LuaMethodExample("gui.defaultPixelFont( \"Arial Narrow\");")]
-		[LuaMethod("defaultPixelFont", "Sets the default font to use in gui.pixelText(). Two font families are available, \"fceux\" and \"gens\" (or  \"0\" and \"1\" respectively), \"gens\" is used by default")]
+		[LuaMethod("defaultPixelFont", "Sets the default font to use in {{gui.pixelText()}}. Two font families are available, \"fceux\" and \"gens\" (or  \"0\" and \"1\" respectively), \"gens\" is used by default")]
 		public void SetDefaultPixelFont(string fontfamily)
 			=> APIs.Gui.SetDefaultPixelFont(fontfamily);
 
@@ -100,14 +100,14 @@ namespace BizHawk.Client.Common
 		[LuaMethodExample("gui.drawBox( 16, 32, 162, 322, 0x007F00FF, 0x7F7F7FFF );")]
 		[LuaMethod("drawBox", "Draws a rectangle on screen from x1/y1 to x2/y2. Same as drawRectangle except it receives two points intead of a point and width/height")]
 		public void DrawBox(
-			int x,
-			int y,
+			int x1,
+			int y1,
 			int x2,
 			int y2,
 			[LuaColorParam] object line = null,
 			[LuaColorParam] object background = null,
 			string surfaceName = null)
-				=> APIs.Gui.DrawBox(x, y, x2, y2, _th.SafeParseColor(line), _th.SafeParseColor(background), surfaceID: UseOrFallback(surfaceName));
+				=> APIs.Gui.DrawBox(x1, y1, x2, y2, _th.SafeParseColor(line), _th.SafeParseColor(background), surfaceID: UseOrFallback(surfaceName));
 
 		[LuaMethodExample("gui.drawEllipse( 16, 32, 77, 99, 0x007F00FF, 0x7F7F7FFF );")]
 		[LuaMethod("drawEllipse", "Draws an ellipse at the given coordinates and the given width and height. Line is the color of the ellipse. Background is the optional fill color")]
@@ -146,7 +146,7 @@ namespace BizHawk.Client.Common
 			description: "Draws the image in the given file (.bmp, .gif, .jpg, .png, or .tif) to the surface specified by the surfaceName parameter, or the current surface if nil/unset."
 				+ " The image will be positioned such that its top-left corner will be at (x, y) on the surface."
 				+ " If width and height are both nil/unset, the image will be drawn at full size (100%). If both are specified, the image will be stretched to that size." // technically width or height can be specified w/o the other but let's leave that as UB
-				+ " If true is passed for the cache parameter, or if it's omitted, the file contents will be cached and re-used next time this function is called with the same path. The cache can be cleared with gui.clearImageCache.")]
+				+ " If true is passed for the cache parameter, or if it's omitted, the file contents will be cached and re-used next time this function is called with the same path. The cache can be cleared with {{gui.clearImageCache}}.")]
 		public void DrawImage(
 			string path,
 			int x,
@@ -158,7 +158,7 @@ namespace BizHawk.Client.Common
 				=> APIs.Gui.DrawImage(path, x, y, width, height, cache, surfaceID: UseOrFallback(surfaceName));
 
 		[LuaMethodExample("gui.clearImageCache( );")]
-		[LuaMethod("clearImageCache", "clears the image cache that is built up by using gui.drawImage, also releases the file handle for cached images")]
+		[LuaMethod("clearImageCache", "clears the image cache that is built up by using {{gui.drawImage}}, also releases the file handle for cached images")]
 		public void ClearImageCache()
 			=> APIs.Gui.ClearImageCache();
 
@@ -169,7 +169,7 @@ namespace BizHawk.Client.Common
 			name: "drawImageRegion",
 			description: "Draws part of the image in the given file (.bmp, .gif, .jpg, .png, or .tif) to the surface specified by the surfaceName parameter, or the current surface if nil/unset."
 				+ " Consult this diagram to see its usage (renders embedded on the TASVideos Wiki): [https://user-images.githubusercontent.com/13409956/198868522-55dc1e5f-ae67-4ebb-a75f-558656cb4468.png|alt=Diagram showing how to use forms.drawImageRegion]"
-				+ " The file contents will be cached and re-used next time this function is called with the same path. The cache can be cleared with gui.clearImageCache.")]
+				+ " The file contents will be cached and re-used next time this function is called with the same path. The cache can be cleared with {{gui.clearImageCache}}.")]
 		public void DrawImageRegion(
 			string path,
 			int source_x,
@@ -305,7 +305,7 @@ namespace BizHawk.Client.Common
 
 		/// <remarks>TODO do this in Lua binding code?</remarks>
 		[LuaMethodExample("gui.drawText( 16, 32, \"Some message\", 0x7F0000FF, 0x00007FFF, 8, \"Arial Narrow\", \"bold\", \"center\", \"middle\" );")]
-		[LuaMethod("drawText", "alias for gui.drawString")]
+		[LuaMethod("drawText", "alias for {{gui.drawString}}")]
 		public void DrawText(
 			int x,
 			int y,
@@ -332,7 +332,7 @@ namespace BizHawk.Client.Common
 					surfaceName: surfaceName);
 
 		[LuaMethodExample("gui.pixelText( 16, 32, \"Some message\", 0x7F0000FF, 0x00007FFF, \"Arial Narrow\" );")]
-		[LuaMethod("pixelText", "Draws the given message in the emulator screen space (like all draw functions) at the given x,y coordinates and the given color. The default color is white. Two font families are available, \"fceux\" and \"gens\" (or  \"0\" and \"1\" respectively), both are monospace and have the same size as in the emulators they've been taken from. If no font family is specified, it uses \"gens\" font, unless that's overridden via gui.defaultPixelFont().")]
+		[LuaMethod("pixelText", "Draws the given message in the emulator screen space (like all draw functions) at the given x,y coordinates and the given color. The default color is white. Two font families are available, \"fceux\" and \"gens\" (or  \"0\" and \"1\" respectively), both are monospace and have the same size as in the emulators they've been taken from. If no font family is specified, it uses \"gens\" font, unless that's overridden via {{gui.defaultPixelFont()}}.")]
 		public void PixelText(
 			int x,
 			int y,

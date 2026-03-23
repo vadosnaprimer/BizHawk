@@ -34,12 +34,12 @@ namespace BizHawk.Client.Common
 			=> (APIs.Emulation.GetGameInfo()?.Status)?.ToString();
 
 		[LuaMethodExample("if ( gameinfo.isstatusbad( ) ) then\r\n\tconsole.log( \"returns the currently loaded rom's game database status is considered 'bad'\" );\r\nend;")]
-		[LuaMethod("isstatusbad", "returns the currently loaded rom's game database status is considered 'bad'")]
+		[LuaMethod("isstatusbad", "returns whether or not the currently loaded rom's game database status is considered \"bad\"")]
 		public bool IsStatusBad()
 			=> APIs.Emulation.GetGameInfo()?.IsRomStatusBad() is true or null;
 
 		[LuaMethodExample("local stgamget = gameinfo.getboardtype( );")]
-		[LuaMethod("getboardtype", "returns identifying information about the 'mapper' or similar capability used for this game.  empty if no such useful distinction can be drawn")]
+		[LuaMethod("getboardtype", "returns identifying information about the \"mapper\" or similar capability used for this game.  empty if no such useful distinction can be drawn")]
 		public string GetBoardType()
 			=> APIs.Emulation.GetBoardName();
 

@@ -122,7 +122,7 @@ namespace BizHawk.Client.Common
 			=> APIs.EmuClient.GetWindowSize();
 
 		[LuaMethodExample("client.SetGameExtraPadding( 5, 10, 15, 20 );")]
-		[LuaMethod("SetGameExtraPadding", "Sets the extra padding added to the 'emu' surface so that you can draw HUD elements in predictable placements")]
+		[LuaMethod("SetGameExtraPadding", "Sets the extra padding added to the {{emu}} surface so that you can draw HUD elements in predictable placements")]
 		public void SetGameExtraPadding(int left, int top, int right, int bottom)
 			=> APIs.EmuClient.SetGameExtraPadding(left, top, right, bottom);
 
@@ -137,7 +137,7 @@ namespace BizHawk.Client.Common
 			=> APIs.EmuClient.GetSoundOn();
 
 		[LuaMethodExample("client.SetClientExtraPadding( 5, 10, 15, 20 );")]
-		[LuaMethod("SetClientExtraPadding", "Sets the extra padding added to the 'native' surface so that you can draw HUD elements in predictable placements")]
+		[LuaMethod("SetClientExtraPadding", "Sets the extra padding added to the {{native}} surface so that you can draw HUD elements in predictable placements")]
 		public void SetClientExtraPadding(int left, int top, int right, int bottom)
 			=> APIs.EmuClient.SetClientExtraPadding(left, top, right, bottom);
 

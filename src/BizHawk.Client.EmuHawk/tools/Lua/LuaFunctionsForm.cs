@@ -61,7 +61,7 @@ namespace BizHawk.Client.EmuHawk
 
 			var deprecated = entry.IsDeprecated ? "[Deprecated] " : "";
 			e.Item.SubItems.Add(deprecated + entry.Name);
-			e.Item.SubItems.Add(entry.ParameterList);
+			e.Item.SubItems.Add(entry.ParameterListWiki);
 			e.Item.SubItems.Add(entry.Description);
 		}
 
@@ -74,7 +74,7 @@ namespace BizHawk.Client.EmuHawk
 				0 => _functionList.OrderBy(x => x.ReturnType, _columnSort.Descending).ToList(),
 				1 => _functionList.OrderBy(x => x.Library, _columnSort.Descending).ToList(),
 				2 => _functionList.OrderBy(x => x.Name, _columnSort.Descending).ToList(),
-				3 => _functionList.OrderBy(x => x.ParameterList, _columnSort.Descending).ToList(),
+				3 => _functionList.OrderBy(x => x.ParameterListWiki, _columnSort.Descending).ToList(),
 				4 => _functionList.OrderBy(x => x.Description, _columnSort.Descending).ToList(),
 				_ => _functionList,
 			};
@@ -128,7 +128,7 @@ namespace BizHawk.Client.EmuHawk
 			foreach (int index in FunctionView.SelectedIndices)
 			{
 				var itm = _filteredList[index];
-				sb.Append($"//{itm.Library}.{itm.Name}{itm.ParameterList}"); // comment style not an accident: the 'declaration' is not legal lua, so use of -- to comment it shouldn't suggest it. right?
+				sb.Append($"//{itm.Library}.{itm.Name}{itm.ParameterListWiki}"); // comment style not an accident: the 'declaration' is not legal lua, so use of -- to comment it shouldn't suggest it. right?
 				if (itm.Example != null)
 				{
 					sb.AppendLine();
@@ -157,6 +157,11 @@ namespace BizHawk.Client.EmuHawk
 		private void ToWikiMarkupButton_Click(object sender, EventArgs e)
 		{
 			Clipboard.SetDataObject(_docs.ToTASVideosWikiMarkup());
+		}
+
+		private void ToLuaTablesButton_Click(object sender, EventArgs e)
+		{
+			Clipboard.SetDataObject(_docs.ToLuaTables());
 		}
 	}
 }

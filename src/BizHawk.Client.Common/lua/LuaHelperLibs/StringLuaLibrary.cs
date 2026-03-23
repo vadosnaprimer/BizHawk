@@ -87,7 +87,7 @@ namespace BizHawk.Client.Common
 		}
 
 		[LuaMethodExample("local s = bizstring.pad_end(\"hm\", 5, 'm'); -- \"hmmmm\"")]
-		[LuaMethod("pad_end", "Appends zero or more of pad_char to the end (right) of str until it's at least length chars long. If pad_char is not a string exactly one char long, its first char will be used, or ' ' if it's empty.")]
+		[LuaMethod("pad_end", "Appends zero or more of pad_char to the end (right) of str until it's at least length chars long. If pad_char is not a string exactly one char long, its first char will be used, or {{ }} if it's empty.")]
 		public static string PadEnd(
 			string str,
 			int length,
@@ -95,7 +95,7 @@ namespace BizHawk.Client.Common
 				=> str.PadRight(length, pad_char.Length is 0 ? ' ' : pad_char[0]);
 
 		[LuaMethodExample("local s = bizstring.pad_start(tostring(0x1A3792D4), 11, ' '); -- \"  439849684\"")]
-		[LuaMethod("pad_start", "Prepends zero or more of pad_char to the start (left) of str until it's at least length chars long. If pad_char is not a string exactly one char long, its first char will be used, or ' ' if it's empty.")]
+		[LuaMethod("pad_start", "Prepends zero or more of pad_char to the start (left) of str until it's at least length chars long. If pad_char is not a string exactly one char long, its first char will be used, or {{ }} if it's empty.")]
 		public static string PadStart(
 			string str,
 			int length,
@@ -171,7 +171,7 @@ namespace BizHawk.Client.Common
 			=> !string.IsNullOrEmpty(str) && str.EndsWithOrdinal(str2); // don't bother fixing encoding, will match (or not match) regardless
 
 		[LuaMethodExample("local nlbizspl = bizstring.split( \"Some, string\", \", \" );")]
-		[LuaMethod("split", "Splits str into a Lua-style array using the given separator (consecutive separators in str will NOT create empty entries in the array). If the separator is not a string exactly one char long, ',' will be used.")]
+		[LuaMethod("split", "Splits str into a Lua-style array using the given separator (consecutive separators in str will NOT create empty entries in the array). If the separator is not a string exactly one char long, {{,}} will be used.")]
 		public LuaTable Split(string str, string separator)
 		{
 			static char SingleOrElse(string s, char defaultValue)

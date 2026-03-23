@@ -41,6 +41,7 @@
 			this.LibraryDescription = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.CopyMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
 			this.CopyMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.ToLuaTablesButton = new System.Windows.Forms.Button();
 			this.CopyMenu.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -60,7 +61,7 @@
 			this.FilterBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.FilterBox.Location = new System.Drawing.Point(12, 311);
 			this.FilterBox.Name = "FilterBox";
-			this.FilterBox.Size = new System.Drawing.Size(159, 20);
+			this.FilterBox.Size = new System.Drawing.Size(159, 21);
 			this.FilterBox.TabIndex = 1;
 			this.FilterBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.FilterBox_KeyUp);
 			// 
@@ -74,7 +75,7 @@
 			// ToWikiMarkupButton
 			// 
 			this.ToWikiMarkupButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.ToWikiMarkupButton.Location = new System.Drawing.Point(493, 309);
+			this.ToWikiMarkupButton.Location = new System.Drawing.Point(356, 309);
 			this.ToWikiMarkupButton.Name = "ToWikiMarkupButton";
 			this.ToWikiMarkupButton.Size = new System.Drawing.Size(138, 23);
 			this.ToWikiMarkupButton.TabIndex = 11;
@@ -137,14 +138,24 @@
 			this.CopyMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.CopyMenuItem});
 			this.CopyMenu.Name = "CopyMenu";
-			this.CopyMenu.Size = new System.Drawing.Size(103, 26);
+			this.CopyMenu.Size = new System.Drawing.Size(105, 26);
 			// 
 			// CopyMenuItem
 			// 
 			this.CopyMenuItem.Name = "CopyMenuItem";
-			this.CopyMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.CopyMenuItem.Size = new System.Drawing.Size(104, 22);
 			this.CopyMenuItem.Text = "&Copy";
 			this.CopyMenuItem.Click += new System.EventHandler(this.FunctionView_Copy);
+			// 
+			// ToLuaTablesButton
+			// 
+			this.ToLuaTablesButton.Location = new System.Drawing.Point(500, 309);
+			this.ToLuaTablesButton.Name = "ToLuaTablesButton";
+			this.ToLuaTablesButton.Size = new System.Drawing.Size(141, 23);
+			this.ToLuaTablesButton.TabIndex = 13;
+			this.ToLuaTablesButton.Text = "Lua tables to Clipboard";
+			this.ToLuaTablesButton.UseVisualStyleBackColor = true;
+			this.ToLuaTablesButton.Click += new System.EventHandler(this.ToLuaTablesButton_Click);
 			// 
 			// LuaFunctionsForm
 			// 
@@ -152,6 +163,7 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(730, 340);
+			this.Controls.Add(this.ToLuaTablesButton);
 			this.Controls.Add(this.ToWikiMarkupButton);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.FilterBox);
@@ -182,5 +194,6 @@
 		private System.Windows.Forms.Button ToWikiMarkupButton;
 		private System.Windows.Forms.ContextMenuStrip CopyMenu;
 		private System.Windows.Forms.ToolStripMenuItem CopyMenuItem;
+		private System.Windows.Forms.Button ToLuaTablesButton;
 	}
 }
