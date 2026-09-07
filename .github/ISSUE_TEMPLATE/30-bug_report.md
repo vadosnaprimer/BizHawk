@@ -40,3 +40,5 @@ System.InvalidOperationException: o noes
 
 [//]: # "That's it! If you'd like to help more, you could try a dev build (see Testing in the readme) or an older release. Click submit now and you can edit it later."
 
+Check if completed:
+- [ ] I confirm that generative AI was not used for this issue in any way
