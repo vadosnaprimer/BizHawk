@@ -29,7 +29,7 @@ Jump to:
 	- [Waterbox (host)](#waterbox-host)
 	- [Waterbox (toolchain + cores)](waterbox-toolchain--cores)
 - [Copyrights and licensing](#copyrights-and-licensing)
-
+- [Generative AI policy](#generative-ai-policy)
 
 
 ## For all development
