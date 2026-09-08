@@ -33,4 +33,4 @@ labels: "Request: New core/port/re-port"
 [//]: # "Code speaks louder than words: If you're able to make a proof-of-concept, pushing it to GitHub and putting a link here will speed up the process."
 
 Check if completed:
-- [ ] I confirm that [generative AI](https://github.com/TASEmulators/BizHawk/blob/master/contributing.md#generative-ai-polic) was not used for this issue in any way
+- [ ] I confirm that [generative AI](https://github.com/TASEmulators/BizHawk/blob/master/contributing.md#generative-ai-policy) was not used for this issue in any way
