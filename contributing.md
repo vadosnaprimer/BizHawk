@@ -334,4 +334,6 @@ Submoduling third-party code that involves output of the generative AI is allowe
 
 Using generative AI as a tool to aid with your research prior to submitting content to this repository is only allowed if that content does not include any AI hallucinations: bug reports and proposed fixes must be valid and sensible.
 
+Machine translation is only allowed if original untranslated text is also included.
+
 Users deliberately or repeatedly violating this policy will get blocked.
