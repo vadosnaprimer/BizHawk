@@ -34,6 +34,8 @@ namespace BizHawk.Client.Common
 				[ CoreNames.Gambatte, CoreNames.Sameboy, CoreNames.GbHawk, CoreNames.SubGbHawk ]),
 			([ VSystemID.Raw.GBL ],
 				[ CoreNames.GambatteLink, CoreNames.GBHawkLink, CoreNames.GBHawkLink3x, CoreNames.GBHawkLink4x ]),
+			([ VSystemID.Raw.GEN ],
+				[ CoreNames.Gpgx, CoreNames.Gens ]),
 			([ VSystemID.Raw.SGB ],
 				[ CoreNames.Gambatte, CoreNames.Bsnes115, CoreNames.SubBsnes115, CoreNames.Bsnes ]),
 			([ VSystemID.Raw.N64 ],

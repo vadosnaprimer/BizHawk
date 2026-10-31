@@ -6,7 +6,7 @@ DEPS_DIR = $(CORE_DIR)/deps
 RETRODEP = $(CORE_DIR)/retrodep
 LIBRETRO_COMM_DIR = $(CORE_DIR)/libretro-common
 
-SOURCES_C += bizhawk.c
+SOURCES_C += bizhawk.c ipf-reader.c
 
 INCFLAGS = \
 	-I$(EMU) \
@@ -67,7 +67,6 @@ SOURCES_C += \
 	$(EMU)/blkdev_cdimage.c \
 	$(EMU)/bsdsocket.c \
 	$(EMU)/calc.c \
-	$(EMU)/caps/caps.c \
 	$(EMU)/caps/uae_dlopen.c \
 	$(EMU)/casablanca.c \
 	$(EMU)/cd32_fmv.c \
