@@ -382,7 +382,7 @@
     <Compile Include="Consoles\Atari\A7800Hawk\A7800Hawk.ISaveRam.cs">
       <DependentUpon>A7800Hawk.cs</DependentUpon>
     </Compile>
-	<Compile Include="Consoles\Atari\A7800Hawk\A7800Hawk.ISettable.cs">
+    <Compile Include="Consoles\Atari\A7800Hawk\A7800Hawk.ISettable.cs">
       <DependentUpon>A7800Hawk.cs</DependentUpon>
     </Compile>
     <Compile Include="Consoles\Atari\A7800Hawk\A7800HawkControllerDeck.cs" />
@@ -1056,6 +1056,8 @@
     </Compile>
     <Compile Include="Consoles\PC Engine\PCEngine.TurboCD.cs" />
     <Compile Include="Consoles\PC Engine\ScsiCDBus.cs" />
+    <Compile Include="Consoles\Sega\Gens\Gens.cs" />
+    <Compile Include="Consoles\Sega\Gens\LibGens.cs" />
     <Compile Include="Consoles\Sega\gpgx64\GPGX.ISoundProvider.cs">
       <DependentUpon>GPGX.cs</DependentUpon>
     </Compile>

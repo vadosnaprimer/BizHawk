@@ -887,7 +887,7 @@ namespace BizHawk.Client.Common
 								}
 								else
 								{
-									core = CoreInventory.Instance["GEN", "Genplus-gx"];
+									core = CoreInventory.Instance["GEN", "Gens"];
 								}
 
 								break;
