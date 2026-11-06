@@ -1124,14 +1124,7 @@ namespace BizHawk.Client.Common
 			// 015 ASCII-encoded controller config for player 2. '3' or '6'.
 			string player2Config = r.ReadStringFixedAscii(1);
 			SimpleController controllers = new SimpleController { Definition = new ControllerDefinition() };
-			if (player1Config == "6" || player2Config == "6")
-			{
-				controllers.Definition.Name = "GPGX Genesis Controller";
-			}
-			else
-			{
-				controllers.Definition.Name = "GPGX 3-Button Controller";
-			}
+			controllers.Definition.Name = "Gens Controller";
 
 			// 016 special flags (Version A and up only)
 			byte flags = r.ReadByte();

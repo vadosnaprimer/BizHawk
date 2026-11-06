@@ -71,6 +71,11 @@ namespace BizHawk.Client.Common
 				return "|.|"; // TODO
 			}
 
+			if (_controlType == "Gens Controller")
+			{
+				return GetGeneis6ButtonControllersAsMnemonic();
+			}
+
 			if (_controlType == "GPGX Genesis Controller")
 			{
 				return GetGeneis6ButtonControllersAsMnemonic();

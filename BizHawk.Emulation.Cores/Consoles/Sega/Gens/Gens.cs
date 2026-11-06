@@ -21,7 +21,8 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 				Name = "Gens Controller",
 				BoolButtons =
 				{
-					"Up", "Down", "Left", "Right", "Start", "A", "B", "C"
+					"P1 Up", "P1 Down", "P1 Left", "P1 Right", "P1 Start", "P1 A", "P1 B", "P1 C", "P1 X", "P1 Y", "P1 Z", "P1 Mode",
+					"P2 Up", "P2 Down", "P2 Left", "P2 Right", "P2 Start", "P2 A", "P2 B", "P2 C", "P2 X", "P2 Y", "P2 Z", "P2 Mode"
 				}
 			};
 
@@ -53,11 +54,21 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 
 		public void FrameAdvance(IController controller, bool render, bool renderSound = true)
 		{
-			Frame++;
+			int input = 0;
 
-			IsLagFrame = LibGens.gens_advance(_videobuff);
-			//UpdateVideo();
-			//update_audio();
+			for (int player = 1; player <= 2; player++)
+			{
+				foreach (var b in Enum.GetValues(typeof(LibGens.Buttons)))
+				{
+					if (controller.IsPressed($"P{player} {Enum.GetName(typeof(LibGens.Buttons), b)}"))
+					{
+						input |= (int)b << ((player - 1) * 16);
+					}
+				}
+			}
+
+			Frame++;
+			IsLagFrame = LibGens.gens_advance(_videobuff, input);
 
 			if (IsLagFrame)
 				LagCount++;
