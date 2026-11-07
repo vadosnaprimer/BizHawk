@@ -47,7 +47,7 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 		public int VsyncNumerator => 60;
 		public int VsyncDenominator => 1;
 		public int BackgroundColor => 0x000000;
-		public bool HasSystemBus => true;
+		public bool HasSystemBus => false;
 		public int[] GetVideoBuffer() => _videobuff;
 		private readonly int[] _videobuff = new int[320 * 224];
 		private IMemoryDomains MemoryDomains;
@@ -84,29 +84,30 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 
 		}
 
-		IInputCallbackSystem IInputPollable.InputCallbacks => throw new NotImplementedException();
+		public bool CanStep(StepType type) => false;
+		public IMemoryCallbackSystem MemoryCallbacks => _memoryCallbacks;
 		public int TotalExecutedCycles => throw new NotImplementedException();
 		public object GetSettings() => throw new NotImplementedException();
 		public object GetSyncSettings() => throw new NotImplementedException();
 		public bool PutSettings(object o) => throw new NotImplementedException();
 		public bool PutSyncSettings(object o) => throw new NotImplementedException();
-		public void SetCpuRegister(string register, int value) { throw new NotImplementedException(); }
-		public void Step(StepType type) { throw new NotImplementedException(); }
-		public bool CanStep(StepType type) { return false; }
+		public void SetCpuRegister(string register, int value) => throw new NotImplementedException();
+		public void Step(StepType type) => throw new NotImplementedException();
+		IInputCallbackSystem IInputPollable.InputCallbacks => throw new NotImplementedException();
 
 		private unsafe void SetMemoryDomains()
 		{
 			var mm = new List<MemoryDomain>();
 
-			var m68Bus = new MemoryDomainDelegate("M68K BUS", 0x1000000, MemoryDomain.Endian.Big,
+			var Ram68k = new MemoryDomainDelegate("M68K RAM", 0x10000, MemoryDomain.Endian.Big,
 				delegate (long addr)
 				{
 					var a = (uint)addr;
-					if (a >= 0x1000000)
+					if (a >= 0x10000)
 						throw new ArgumentOutOfRangeException();
 					return LibGens.gens_peek_m68k(a);
 				}, null, 2);
-			mm.Add(m68Bus);
+			mm.Add(Ram68k);
 
 			var rom = new MemoryDomainDelegate("ROM", 0x600000, MemoryDomain.Endian.Little,
 				delegate (long addr)
@@ -119,15 +120,11 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 			mm.Add(rom);
 
 			MemoryDomains = new MemoryDomainList(mm);
-			MemoryDomains.SystemBus = m68Bus;
 
 			(ServiceProvider as BasicServiceProvider).Register<IMemoryDomains>(MemoryDomains);
 		}
 
-		public IMemoryCallbackSystem MemoryCallbacks
-		{
-			get { return _memoryCallbacks; }
-		}
+
 		private readonly MemoryCallbackSystem _memoryCallbacks = new MemoryCallbackSystem();
 
 		private LibGens.mem_cb ExecCallback;
@@ -154,6 +151,7 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 		{
 			LibGens.gens_set_mem_callback(null, null, null);
 		}
+
 		public IDictionary<string, RegisterValue> GetCpuFlagsAndRegisters()
 		{
 			LibGens.RegisterInfo[] regs = new LibGens.RegisterInfo[18];
