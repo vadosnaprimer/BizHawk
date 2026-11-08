@@ -410,6 +410,7 @@ event.onloadstate(function()
 	SpawnCount = 0
 	return HandleMsgTable(1)
 end)
+
 rex(function() DamageHitbox = false end   , 0x375A, "DamageHitbox-")
 rex(function() DamageHitbox = true  end   , 0x375E, "DamageHitbox+")
 rex(function() DamageHitbox = false end   , 0x3768, "DamageHitbox-")
@@ -426,6 +427,7 @@ rex(Collision                             , 0x8C9A,     "Collision")
 rex(HandleDamage                          , 0x1085A, "MeeleeDamage")
 rex(HandleDamage                          , 0x10CBA, "WeaponDamage")
 rex(HandleDamage                          , 0x10CC4, "WeaponDamage")
+
 while true do
 	local color0     = "yellow"
 	local color1     = "yellow"

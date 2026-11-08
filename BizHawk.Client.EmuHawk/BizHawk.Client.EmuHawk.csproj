@@ -631,9 +631,7 @@
     <Compile Include="Extensions\ControlExtensions.cs" />
     <Compile Include="Extensions\CoreExtensions.cs" />
     <Compile Include="Extensions\ToolExtensions.cs" />
-    <Compile Include="FileLoader.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="FileLoader.cs" />
     <Compile Include="GLManager.cs" />
     <Compile Include="GlobalWin.cs" />
     <Compile Include="Input\GamePad.cs" Condition=" '$(OS)' == 'Windows_NT' " />
@@ -651,11 +649,9 @@
     </Compile>
     <Compile Include="MainForm.Hotkey.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
-      <SubType>Form</SubType>
     </Compile>
     <Compile Include="MainForm.Movie.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
-      <SubType>Form</SubType>
     </Compile>
     <Compile Include="movie\EditCommentsForm.cs">
       <SubType>Form</SubType>
@@ -672,7 +668,6 @@
     </Compile>
     <Compile Include="MainForm.Events.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
-      <SubType>Form</SubType>
     </Compile>
     <Compile Include="movie\EditSubtitlesForm.cs">
       <SubType>Form</SubType>
