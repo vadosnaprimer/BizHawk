@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 
 using BizHawk.Emulation.Common;
@@ -8,7 +9,7 @@ using BizHawk.Emulation.Common;
 namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 {
 	[CoreAttributes("Gens", "authors")]
-	public class Gens : IEmulator, IInputPollable, IVideoProvider, IDebuggable
+	public class Gens : IEmulator, IInputPollable, IVideoProvider, IDebuggable, IStatable
 	{
 		[CoreConstructor("GEN")]
 		public Gens(CoreComm comm, byte[] file, object settings, object syncSettings, GameInfo game)
@@ -26,6 +27,9 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 					"P2 Up", "P2 Down", "P2 Left", "P2 Right", "P2 Start", "P2 A", "P2 B", "P2 C", "P2 X", "P2 Y", "P2 Z", "P2 Mode"
 				}
 			};
+
+			_savebuff = new byte[0x34380];
+			_savebuff2 = new byte[_savebuff.Length + 13];
 
 			SetMemoryDomains();
 			InitMemCallbacks();
@@ -49,8 +53,29 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 		public int BackgroundColor => 0x000000;
 		public bool HasSystemBus => false;
 		public int[] GetVideoBuffer() => _videobuff;
+		public bool CanStep(StepType type) => false;
+		public bool BinarySaveStatesPreferred => true;
+		public IMemoryCallbackSystem MemoryCallbacks => _memoryCallbacks;
+
+		public int TotalExecutedCycles => throw new NotImplementedException();
+		public bool PutSettings(object o) => throw new NotImplementedException();
+		public bool PutSyncSettings(object o) => throw new NotImplementedException();
+		public void SetCpuRegister(string register, int value) => throw new NotImplementedException();
+		public void Step(StepType type) => throw new NotImplementedException();
+		public void SaveStateText(TextWriter writer) => throw new NotImplementedException();
+		public void LoadStateText(TextReader reader) => throw new NotImplementedException();
+		public object GetSettings() => throw new NotImplementedException();
+		public object GetSyncSettings() => throw new NotImplementedException();
+		IInputCallbackSystem IInputPollable.InputCallbacks => throw new NotImplementedException();
+
+		private readonly MemoryCallbackSystem _memoryCallbacks = new MemoryCallbackSystem();
 		private readonly int[] _videobuff = new int[320 * 224];
-		private IMemoryDomains MemoryDomains;
+		private byte[] _savebuff;
+		private byte[] _savebuff2;
+		private IMemoryDomains _memoryDomains;
+		private LibGens.mem_cb ExecCallback;
+		private LibGens.mem_cb ReadCallback;
+		private LibGens.mem_cb WriteCallback;
 
 		public void FrameAdvance(IController controller, bool render, bool renderSound = true)
 		{
@@ -68,7 +93,8 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 			}
 
 			Frame++;
-			IsLagFrame = LibGens.gens_advance(_videobuff, input);
+			IsLagFrame = LibGens.gens_advance(input);
+			LibGens.gens_get_video(_videobuff);
 
 			if (IsLagFrame)
 				LagCount++;
@@ -84,22 +110,11 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 
 		}
 
-		public bool CanStep(StepType type) => false;
-		public IMemoryCallbackSystem MemoryCallbacks => _memoryCallbacks;
-		public int TotalExecutedCycles => throw new NotImplementedException();
-		public object GetSettings() => throw new NotImplementedException();
-		public object GetSyncSettings() => throw new NotImplementedException();
-		public bool PutSettings(object o) => throw new NotImplementedException();
-		public bool PutSyncSettings(object o) => throw new NotImplementedException();
-		public void SetCpuRegister(string register, int value) => throw new NotImplementedException();
-		public void Step(StepType type) => throw new NotImplementedException();
-		IInputCallbackSystem IInputPollable.InputCallbacks => throw new NotImplementedException();
-
 		private unsafe void SetMemoryDomains()
 		{
 			var mm = new List<MemoryDomain>();
 
-			var Ram68k = new MemoryDomainDelegate("M68K RAM", 0x10000, MemoryDomain.Endian.Big,
+			var ram68k = new MemoryDomainDelegate("M68K RAM", 0x10000, MemoryDomain.Endian.Big,
 				delegate (long addr)
 				{
 					var a = (uint)addr;
@@ -107,7 +122,7 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 						throw new ArgumentOutOfRangeException();
 					return LibGens.gens_peek_m68k(a);
 				}, null, 2);
-			mm.Add(Ram68k);
+			mm.Add(ram68k);
 
 			var rom = new MemoryDomainDelegate("ROM", 0x600000, MemoryDomain.Endian.Little,
 				delegate (long addr)
@@ -119,17 +134,10 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 				}, null, 2);
 			mm.Add(rom);
 
-			MemoryDomains = new MemoryDomainList(mm);
+			_memoryDomains = new MemoryDomainList(mm);
 
-			(ServiceProvider as BasicServiceProvider).Register<IMemoryDomains>(MemoryDomains);
+			(ServiceProvider as BasicServiceProvider).Register<IMemoryDomains>(_memoryDomains);
 		}
-
-
-		private readonly MemoryCallbackSystem _memoryCallbacks = new MemoryCallbackSystem();
-
-		private LibGens.mem_cb ExecCallback;
-		private LibGens.mem_cb ReadCallback;
-		private LibGens.mem_cb WriteCallback;
 
 		private void InitMemCallbacks()
 		{
@@ -174,6 +182,44 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 			return ret;
 		}
 
+		public byte[] SaveStateBinary()
+		{
+			var ms = new MemoryStream(_savebuff2, true);
+			var bw = new BinaryWriter(ms);
+			SaveStateBinary(bw);
+			bw.Flush();
+			ms.Close();
+			return _savebuff2;
+		}
 
+		public void LoadStateBinary(BinaryReader reader)
+		{
+			int newlen = reader.ReadInt32();
+			if (newlen != _savebuff.Length)
+			{
+				throw new Exception("Unexpected state size");
+			}
+
+			reader.Read(_savebuff, 0, _savebuff.Length);
+			LibGens.gens_state_load(_savebuff);
+
+			// other variables
+			Frame = reader.ReadInt32();
+			LagCount = reader.ReadInt32();
+			IsLagFrame = reader.ReadBoolean();
+			LibGens.gens_get_video(_videobuff);
+		}
+
+		public void SaveStateBinary(BinaryWriter writer)
+		{
+			LibGens.gens_state_save(_savebuff);
+
+			writer.Write(_savebuff.Length);
+			writer.Write(_savebuff);
+			// other variables
+			writer.Write(Frame);
+			writer.Write(LagCount);
+			writer.Write(IsLagFrame);
+		}
 	}
 }

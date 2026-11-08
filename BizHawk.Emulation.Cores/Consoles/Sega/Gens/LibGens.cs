@@ -35,7 +35,10 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 		public static extern int gens_init(byte[] rom, int romLength);
 
 		[DllImport(dll, CallingConvention = cc)]
-		public static extern bool gens_advance(int[] vbuff, int input);
+		public static extern bool gens_advance(int input);
+
+		[DllImport(dll, CallingConvention = cc)]
+		public static extern void gens_get_video(int[] vbuff);
 
 		[DllImport(dll, CallingConvention = cc)]
 		public static extern byte gens_peek_m68k(uint addr);
@@ -45,6 +48,12 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 
 		[DllImport(dll, CallingConvention = cc)]
 		public static extern int gens_getregs([Out] RegisterInfo[] regs);
+
+		[DllImport(dll, CallingConvention = cc)]
+		public static extern void gens_state_save(byte[] dest);
+
+		[DllImport(dll, CallingConvention = cc)]
+		public static extern void gens_state_load(byte[] src);
 
 		[UnmanagedFunctionPointer(cc)]
 		public delegate void mem_cb(uint addr);
