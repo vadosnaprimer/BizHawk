@@ -9,7 +9,7 @@ using BizHawk.Emulation.Common;
 namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 {
 	[CoreAttributes("Gens", "authors")]
-	public class Gens : IEmulator, IInputPollable, IVideoProvider, IDebuggable, IStatable
+	public class Gens : IEmulator, IInputPollable, IVideoProvider, IDebuggable, IStatable, ISoundProvider
 	{
 		[CoreConstructor("GEN")]
 		public Gens(CoreComm comm, byte[] file, object settings, object syncSettings, GameInfo game)
@@ -42,9 +42,11 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 		public int Frame { get; private set; }
 		public string SystemId => "GEN";
 		public bool DeterministicEmulation => true;
-		public int LagCount { get; set; }
+		public bool BinarySaveStatesPreferred => true;
+		public bool CanProvideAsync => false;
 		public bool IsLagFrame { get; set; }
-		public int VirtualWidth => 224*4/3;
+		public int LagCount { get; set; }
+		public int VirtualWidth => 224 * 4 / 3;
 		public int VirtualHeight => 224;
 		public int BufferWidth => 320;
 		public int BufferHeight => 224;
@@ -52,10 +54,10 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 		public int VsyncDenominator => 1;
 		public int BackgroundColor => 0x000000;
 		public bool HasSystemBus => false;
-		public int[] GetVideoBuffer() => _videobuff;
 		public bool CanStep(StepType type) => false;
-		public bool BinarySaveStatesPreferred => true;
+		public int[] GetVideoBuffer() => _videobuff;
 		public IMemoryCallbackSystem MemoryCallbacks => _memoryCallbacks;
+		public SyncSoundMode SyncMode => SyncSoundMode.Sync;
 
 		public int TotalExecutedCycles => throw new NotImplementedException();
 		public bool PutSettings(object o) => throw new NotImplementedException();
@@ -64,6 +66,7 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 		public void Step(StepType type) => throw new NotImplementedException();
 		public void SaveStateText(TextWriter writer) => throw new NotImplementedException();
 		public void LoadStateText(TextReader reader) => throw new NotImplementedException();
+		public void GetSamplesAsync(short[] samples) => throw new InvalidOperationException("Async mode is not supported.");
 		public object GetSettings() => throw new NotImplementedException();
 		public object GetSyncSettings() => throw new NotImplementedException();
 		IInputCallbackSystem IInputPollable.InputCallbacks => throw new NotImplementedException();
@@ -76,6 +79,8 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 		private LibGens.mem_cb ExecCallback;
 		private LibGens.mem_cb ReadCallback;
 		private LibGens.mem_cb WriteCallback;
+		private short[] samples = new short[4096];
+		private int nsamp = 0;
 
 		public void FrameAdvance(IController controller, bool render, bool renderSound = true)
 		{
@@ -95,6 +100,13 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 			Frame++;
 			IsLagFrame = LibGens.gens_advance(input);
 			LibGens.gens_get_video(_videobuff);
+
+			IntPtr src = IntPtr.Zero;
+			LibGens.gens_get_audio(ref nsamp, ref src);
+			if (src != IntPtr.Zero)
+			{
+				Marshal.Copy(src, samples, 0, nsamp * 2);
+			}
 
 			if (IsLagFrame)
 				LagCount++;
@@ -221,5 +233,26 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 			writer.Write(LagCount);
 			writer.Write(IsLagFrame);
 		}
+
+		public void GetSamplesSync(out short[] samples, out int nsamp)
+		{
+			nsamp = this.nsamp;
+			samples = this.samples;
+			this.nsamp = 0;
+		}
+
+		public void DiscardSamples()
+		{
+			this.nsamp = 0;
+		}
+
+		public void SetSyncMode(SyncSoundMode mode)
+		{
+			if (mode == SyncSoundMode.Async)
+			{
+				throw new NotSupportedException("Async mode is not supported.");
+			}
+		}
+
 	}
 }

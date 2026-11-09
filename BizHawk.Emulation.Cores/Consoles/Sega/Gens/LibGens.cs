@@ -41,6 +41,9 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 		public static extern void gens_get_video(int[] vbuff);
 
 		[DllImport(dll, CallingConvention = cc)]
+		public static extern void gens_get_audio(ref int n, ref IntPtr buffer);
+
+		[DllImport(dll, CallingConvention = cc)]
 		public static extern byte gens_peek_m68k(uint addr);
 
 		[DllImport(dll, CallingConvention = cc)]
