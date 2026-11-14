@@ -59,17 +59,17 @@ namespace BizHawk.Emulation.Cores.Consoles.Sega.Gens
 		public IMemoryCallbackSystem MemoryCallbacks => _memoryCallbacks;
 		public SyncSoundMode SyncMode => SyncSoundMode.Sync;
 
-		public int TotalExecutedCycles => throw new NotImplementedException();
-		public bool PutSettings(object o) => throw new NotImplementedException();
-		public bool PutSyncSettings(object o) => throw new NotImplementedException();
-		public void SetCpuRegister(string register, int value) => throw new NotImplementedException();
-		public void Step(StepType type) => throw new NotImplementedException();
-		public void SaveStateText(TextWriter writer) => throw new NotImplementedException();
-		public void LoadStateText(TextReader reader) => throw new NotImplementedException();
-		public void GetSamplesAsync(short[] samples) => throw new InvalidOperationException("Async mode is not supported.");
-		public object GetSettings() => throw new NotImplementedException();
-		public object GetSyncSettings() => throw new NotImplementedException();
-		IInputCallbackSystem IInputPollable.InputCallbacks => throw new NotImplementedException();
+		IInputCallbackSystem IInputPollable.InputCallbacks { get { throw new NotImplementedException(); } }
+		public int TotalExecutedCycles { get { throw new NotImplementedException(); } }
+		public bool PutSettings(object o) { throw new NotImplementedException(); }
+		public bool PutSyncSettings(object o) { throw new NotImplementedException(); }
+		public void SetCpuRegister(string register, int value) { throw new NotImplementedException(); }
+		public void Step(StepType type) { throw new NotImplementedException(); }
+		public void SaveStateText(TextWriter writer) { throw new NotImplementedException(); }
+		public void LoadStateText(TextReader reader) { throw new NotImplementedException(); }
+		public void GetSamplesAsync(short[] samples) { throw new InvalidOperationException("Async mode is not supported."); }
+		public object GetSettings() { throw new NotImplementedException(); }
+		public object GetSyncSettings() { throw new NotImplementedException(); }
 
 		private readonly MemoryCallbackSystem _memoryCallbacks = new MemoryCallbackSystem();
 		private readonly int[] _videobuff = new int[320 * 224];
