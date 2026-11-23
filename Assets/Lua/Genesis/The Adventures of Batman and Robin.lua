@@ -4,7 +4,7 @@
 -- GLOBALS --
 MsgTable    = {}
 MsgTime     = 16
-MsgOffs     = 24
+MsgOffs     = 16
 MsgCutoff   = 60
 RNGcount    = 0
 SpawnCount  = 0
@@ -141,10 +141,10 @@ function Collision()
 	GetCam()
 	local a0     = bit.band(getr("M68K A0"), 0xFFFF)
 	local a6     = bit.band(getr("M68K A6"), 0xFFFF)
-	local wx1    = bit.band(ToSigned16(getr("M68K D4")), 0xFFFF) - xcam
-	local wy1    = bit.band(ToSigned16(getr("M68K D5")), 0xFFFF) - ycam
-	local wx2    = bit.band(ToSigned16(getr("M68K D6")), 0xFFFF) - xcam
-	local wy2    = bit.band(ToSigned16(getr("M68K D7")), 0xFFFF) - ycam
+	local wx1    = ToSigned16(bit.band(getr("M68K D4"), 0xFFFF)) - xcam
+	local wy1    = ToSigned16(bit.band(getr("M68K D5"), 0xFFFF)) - ycam
+	local wx2    = ToSigned16(bit.band(getr("M68K D6"), 0xFFFF)) - xcam
+	local wy2    = ToSigned16(bit.band(getr("M68K D7"), 0xFFFF)) - ycam
 	local id     = rw(a6 + 2)
 	local damage = rw(a6 + 0x12)
 --	text(wx2 + 2, wy1 + 1, string.format("%X",a6))
@@ -232,7 +232,7 @@ function Objects()
 		local ysub  = rb (base+0x44)
 		local hp    = rw (base+0x52)
 		local ptr2  = 0
-		if id == 0x53B3 then ptr2 = rl(ptr1+0x2A) end
+		if id == 0x53B3 or level == 818 then ptr2 = rl(ptr1+0x2A) end
 	--	local code = rw (ptr2)
 		if base > 0 then
 			if ptr2 == 0x27DEE -- helicopter black
@@ -272,7 +272,7 @@ function Spawns()
 	local base = bit.band(getr("M68K A6"), 0xFFFF)
 	local ptr1 = rw(base+0x0A)
 	local ptr2 = rl(ptr1+0x2A)
-	local code = rw(ptr2)
+	local code = rw(ptr2, "ROM")
 	local text = ""
 	SpawnX = rws(base+0x3E) - xcam
 	SpawnY = rws(base+0x42) - ycam
